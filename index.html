@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sảnh Chờ - Cờ Tỷ Phú 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase (dùng cho đăng nhập Google + đồng bộ dữ liệu tài khoản). Xem hướng dẫn cấu hình FIREBASE_CONFIG trong thẻ <script> chính bên dưới. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --wood-1:#8a5a34; --wood-2:#6e4526; --cream:#f3ecd8; --cream-2:#fbf3de;
+    --ink:#3a2b16; --ink-soft:#7a6a4a;
+    --gold:#e8a622; --gold-2:#ffce54;
+    --p1:#2f6fed; --p2:#c0293d; --p3:#e0b400; --p4:#2fa84f;
+    --panel: rgba(30,20,10,0.55);
+    --tier-dong:#b08d57; --tier-bac:#b9c1c9; --tier-vang:#ffd76b; --tier-ptin:#9fd9e8; --tier-kc:#c9a6ff;
+    --r-lg:22px; --r-md:16px; --r-sm:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;min-height:100%;font-family:'Nunito',Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);}
+  h1,h2,h3,.display{font-family:'Baloo 2',sans-serif;}
+  body{
+    background:
+      linear-gradient(rgba(8,5,20,0.35), rgba(8,5,20,0.55)),
+      url('assets/jpeg_1.jpg') center top / cover no-repeat fixed;
+    min-height:100vh; padding:22px; overflow-x:hidden;
+  }
+  .wrap{max-width:960px;margin:0 auto;}
+  .hidden{display:none !important;}
+
+  /* ---------- Top profile bar ---------- */
+  .topbar{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;}
+  .profile-bar{
+    display:flex;align-items:center;gap:14px;
+    background:linear-gradient(160deg, rgba(30,15,55,.82), rgba(10,8,30,.82));
+    backdrop-filter:blur(4px);
+    border-radius:var(--r-lg);padding:12px 18px 12px 10px;box-shadow:0 8px 26px rgba(0,0,0,.5), 0 0 0 1px rgba(180,140,255,.25) inset;
+    border:2px solid rgba(180,140,255,.45);flex:1;min-width:280px;
+  }
+  .avatar-frame{
+    width:78px;height:78px;flex:0 0 78px;position:relative;margin:0 6px 0 2px;
+  }
+  .avatar-ring-glow{
+    position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(from 200deg, #6a5cff, #8a5cff 25%, #c96bff 45%, #5cc6ff 70%, #6a5cff 100%);
+    box-shadow:0 0 14px 2px rgba(140,110,255,.55);
+  }
+  .avatar-ring-inner{
+    position:absolute;inset:4px;border-radius:50%;background:#140b2e;
+  }
+  .avatar-crown{
+    position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:22px;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));z-index:2;
+  }
+  .avatar-star{
+    position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);font-size:14px;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));z-index:2;
+  }
+  .avatar-btn{
+    width:64px;height:64px;border-radius:50%;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer;overflow:hidden;z-index:1;
+  }
+  .avatar-btn .edit-dot{
+    position:absolute;bottom:-2px;right:-2px;background:var(--gold);color:#3a2400;font-size:10px;
+    width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--cream-2);
+    z-index:3;
+  }
+  .profile-mid{flex:1;min-width:0;}
+  .name-row{display:flex;align-items:center;gap:8px;}
+  #name-input{
+    background:transparent;border:none;border-bottom:2px dashed rgba(255,255,255,.4);color:#fff;
+    font-family:'Baloo 2',sans-serif;font-weight:700;font-size:18px;padding:2px 2px;max-width:220px;
+  }
+  #name-input:focus{outline:none;border-bottom-color:var(--gold-2);}
+  .tier-chip{
+    font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;color:#3a2400;letter-spacing:.3px;
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
+  }
+  .xp-bar-wrap{margin-top:6px;height:9px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden;
+    width:100%;max-width:280px;box-shadow:0 0 0 1px rgba(180,140,255,.3) inset;}
+  .xp-bar-fill{height:100%;background:linear-gradient(90deg,#7b7bff,#c96bff,var(--gold-2));border-radius:999px;transition:width .5s;}
+  .xp-label{font-size:10.5px;color:#fff;opacity:.8;margin-top:3px;}
+  .gold-chip{
+    display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.35);color:#ffe9b0;font-weight:800;
+    padding:8px 14px;border-radius:999px;font-size:14px;white-space:nowrap;border:1px solid rgba(255,215,120,.35);
+  }
+  .icon-toolbar{display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+  .icon-toolbar-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  .shop-btn{
+    background:linear-gradient(180deg,#7ed0e8,#3aa0c9);color:#04303f;border:none;font-weight:800;
+    padding:9px 14px;border-radius:999px;cursor:pointer;font-size:12.5px;white-space:nowrap;
+    box-shadow:0 4px 10px rgba(0,0,0,.3);
+  }
+  .pid-row{display:flex;align-items:center;gap:6px;margin-top:3px;}
+  .pid-row span{font-size:10.5px;color:#fff;opacity:.78;font-family:monospace;letter-spacing:.5px;}
+  .pid-copy-btn{background:none;border:none;color:#ffe9b0;cursor:pointer;font-size:12px;padding:0;}
+  .icon-btn{
+    width:48px;height:48px;border-radius:12px;padding:0;border:none;background:transparent;cursor:pointer;
+    transition:transform .15s ease, filter .15s ease;display:block;
+  }
+  .icon-btn img{width:100%;height:100%;object-fit:contain;display:block;}
+  .icon-btn:hover{transform:translateY(-5px) scale(1.07);filter:drop-shadow(0 8px 12px rgba(0,0,0,.55));}
+  .icon-btn:active{transform:translateY(-2px) scale(1.02);}
+
+  /* friends list */
+  .friend-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;margin-bottom:7px;
+    background:#faf6e8;border:1px solid #ecdfb8;}
+  .friend-row .fav{width:36px;height:36px;border-radius:50%;flex:0 0 36px;display:flex;align-items:center;
+    justify-content:center;font-size:18px;border:2px solid rgba(0,0,0,.15);}
+  .friend-row .finfo{flex:1;min-width:0;}
+  .friend-row .fname{font-weight:800;font-size:13.5px;color:#3a2b16;}
+  .friend-row .fid{font-size:10.5px;color:var(--ink-soft);font-family:monospace;}
+  .friend-row .fstats{font-size:11px;color:var(--ink-soft);}
+  .friend-row .fbtns{display:flex;gap:6px;flex-direction:column;}
+  .friend-row .fbtns button{border:none;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;}
+  .friend-row .fbtns .join-b{background:var(--gold);color:#3a2400;}
+  .friend-row .fbtns .del-b{background:#e3ddc9;color:#7a2e1f;}
+  .add-friend-inline{border:none;background:var(--gold);color:#3a2400;font-weight:800;font-size:10px;
+    padding:4px 8px;border-radius:999px;cursor:pointer;margin-left:6px;white-space:nowrap;}
+
+  /* leaderboard */
+  .lb-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;margin-bottom:6px;background:#faf6e8;}
+  .lb-row.me{background:#fff2cf;border:2px solid var(--gold);}
+  .lb-rank{width:22px;text-align:center;font-weight:800;color:#7a2e1f;}
+  .lb-av{width:32px;height:32px;border-radius:50%;flex:0 0 32px;display:flex;align-items:center;justify-content:center;
+    font-size:16px;border:2px solid rgba(0,0,0,.15);}
+  .lb-name{flex:1;font-weight:800;font-size:13px;min-width:0;}
+  .lb-xp{font-size:12px;font-weight:800;color:#5a4526;white-space:nowrap;}
+  .empty-note{font-size:12.5px;color:var(--ink-soft);padding:10px 4px;text-align:center;}
+
+  /* ---------- Mode cards ---------- */
+  .modes{display:grid;grid-template-columns:0.9fr 1fr;gap:16px;margin-top:18px;}
+  @media (max-width:640px){.modes{grid-template-columns:1fr;}}
+  .mode-card{
+    border-radius:var(--r-lg);cursor:pointer;border:none;overflow:hidden;padding:0;width:100%;
+    background:rgba(10,8,25,.35);display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 26px rgba(0,0,0,.5), 0 0 0 2px rgba(180,140,255,.35) inset;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .mode-card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 18px 38px rgba(0,0,0,.6), 0 0 0 2px rgba(255,215,120,.65) inset;}
+  .mode-card:active{transform:translateY(-2px) scale(1.005);}
+  .mode-card img{width:100%;height:100%;object-fit:contain;display:block;}
+  #mode-quick{grid-row:span 2;aspect-ratio:1/1;}
+  #mode-friend{aspect-ratio:1192/560;}
+  #mode-bot{aspect-ratio:1194/506;}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;}
+
+  /* ---------- Generic overlay/modal ---------- */
+  .overlay{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 20%, rgba(80,50,20,.55), rgba(8,5,2,.9));
+    display:flex;align-items:center;justify-content:center;z-index:80;padding:16px;}
+  .modal-card{width:min(94vw,440px);background:var(--cream-2);border-radius:var(--r-lg);padding:24px;
+    border:4px solid #c9a24a;box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:88vh;overflow-y:auto;}
+  .modal-card h2{margin:0 0 4px;color:#7a2e1f;font-size:21px;}
+  .modal-card .sub{margin:0 0 16px;font-size:12.5px;color:var(--ink-soft);}
+  .close-x{position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-soft);}
+  .field-label{font-size:12px;font-weight:800;color:#5a4526;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 6px;}
+  .text-input{width:100%;padding:11px 12px;border-radius:var(--r-sm);border:2px solid #ecdfb8;font-size:15px;font-weight:700;
+    letter-spacing:1px;color:var(--ink);}
+  .text-input:focus{outline:none;border-color:var(--gold);}
+  .btn{border:none;border-radius:999px;font-weight:800;cursor:pointer;padding:12px 20px;font-size:14.5px;}
+  .btn-gold{background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#4a2e00;box-shadow:0 6px 14px rgba(0,0,0,.3);}
+  .btn-gold:disabled{filter:grayscale(.5) brightness(.85);cursor:not-allowed;}
+  .btn-ghost{background:#e3ddc9;color:#5a4526;}
+  .btn-row{display:flex;gap:10px;margin-top:16px;}
+  .btn-row .btn{flex:1;}
+  .tab-row{display:flex;gap:8px;margin-bottom:4px;}
+  .tab-btn{flex:1;padding:9px 0;border-radius:999px;border:2px solid #d8c896;background:#fff;font-weight:800;
+    font-size:13px;color:#8a7a54;cursor:pointer;}
+  .tab-btn.active{background:var(--gold);border-color:#c9861a;color:#3a2400;}
+  .err-msg{color:#a02222;font-size:12.5px;font-weight:700;margin-top:8px;min-height:16px;}
+
+  /* audio settings */
+  .audio-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  .audio-toggle{flex:0 0 42px;width:42px;height:42px;border-radius:50%;border:2px solid #ecdfb8;background:#fff;
+    font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .audio-toggle.off{background:#f0e2e2;border-color:#e0b0b0;opacity:.7;}
+  .audio-slider-wrap{flex:1;min-width:0;}
+  .audio-slider-label{font-size:12px;font-weight:800;color:#5a4526;margin-bottom:4px;display:flex;justify-content:space-between;}
+  .audio-slider-wrap input[type=range]{width:100%;accent-color:#e8a622;cursor:pointer;}
+
+  /* avatar picker */
+  .avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .avatar-opt{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;
+    cursor:pointer;border:3px solid transparent;}
+  .avatar-opt.sel{border-color:var(--gold);box-shadow:0 0 0 2px #fff5;}
+
+  /* ---------- "Chơi với bạn" modal: tông xanh-lá neon khớp với ô ngoài ---------- */
+  #friend-modal .modal-card{
+    background:linear-gradient(160deg, #0e2a16, #0a1c10);
+    border:3px solid #7ef542;
+    box-shadow:0 20px 50px rgba(0,0,0,.6), 0 0 26px rgba(126,245,66,.35), 0 0 0 1px rgba(126,245,66,.2) inset;
+  }
+  #friend-modal .modal-card h2{color:#c8ffab;text-shadow:0 0 10px rgba(126,245,66,.5);}
+  #friend-modal .modal-card .sub{color:#9fd9a0;}
+  #friend-modal .close-x{color:#9fd9a0;}
+  #friend-modal .field-label{color:#9fe87a;}
+  #friend-modal .text-input{background:#0d2013;border-color:#3a6b2a;color:#e9ffe0;}
+  #friend-modal .text-input:focus{border-color:#7ef542;}
+  #friend-modal .tab-btn{background:#0d2013;border-color:#3a6b2a;color:#8fd07a;}
+  #friend-modal .tab-btn.active{background:linear-gradient(180deg,#9dfa54,#4fbf2a);border-color:#7ef542;color:#0a2000;}
+  #friend-modal .btn-gold{background:linear-gradient(180deg,#9dfa54,#4fbf2a);color:#0a2000;
+    box-shadow:0 6px 14px rgba(0,0,0,.4), 0 0 14px rgba(126,245,66,.4);}
+  #friend-modal .room-code-box{background:#0d2013;border:2px solid #3a6b2a;}
+  #friend-modal .room-code-box span{color:#cdeecb;}
+  #friend-modal .room-code-box b{color:#9dfa54;text-shadow:0 0 8px rgba(126,245,66,.5);}
+  #friend-modal .copy-btn{background:linear-gradient(180deg,#9dfa54,#4fbf2a);color:#0a2000;}
+  #friend-modal .err-msg{color:#ff8a8a;}
+
+  /* ---------- Lobby (room) screen ---------- */
+  .lobby-wrap{background:var(--cream-2);border-radius:var(--r-lg);padding:20px;border:4px solid #c9a24a;
+    box-shadow:0 16px 40px rgba(0,0,0,.45);margin-top:18px;}
+  .lobby-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  .room-code-box{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid #ecdfb8;border-radius:999px;
+    padding:8px 8px 8px 16px;}
+  .room-code-box b{letter-spacing:3px;font-size:16px;color:#7a2e1f;}
+  .copy-btn{background:var(--gold);border:none;color:#3a2400;font-weight:800;border-radius:999px;padding:7px 14px;
+    font-size:12px;cursor:pointer;}
+  .leave-btn{background:#e3ddc9;color:#7a2e1f;border:none;font-weight:800;padding:8px 16px;border-radius:999px;
+    cursor:pointer;font-size:12.5px;}
+
+  .lobby-body{display:grid;grid-template-columns:1fr 1.3fr;gap:16px;margin-top:16px;}
+  @media (max-width:680px){.lobby-body{grid-template-columns:1fr;}}
+
+  .players-panel{background:#fffdf6;border-radius:var(--r-md);padding:12px;border:2px solid #ecdfb8;}
+  .players-panel h3{margin:0 0 8px;font-size:14px;color:#5a4526;}
+  .player-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;margin-bottom:6px;
+    background:#faf6e8;transition:box-shadow .2s;}
+  .player-row.speaking{box-shadow:0 0 0 2px var(--gold), 0 0 14px rgba(232,166,34,.5);}
+  .player-row .pav{width:34px;height:34px;border-radius:50%;flex:0 0 34px;display:flex;align-items:center;justify-content:center;
+    font-size:18px;border:2px solid rgba(0,0,0,.15);}
+  .player-row .pname{flex:1;font-weight:800;font-size:13.5px;color:#3a2b16;}
+  .player-row .mic-state{font-size:14px;}
+  .you-tag{font-size:10px;background:var(--gold);color:#3a2400;padding:1px 7px;border-radius:999px;font-weight:800;margin-left:4px;}
+
+  .chat-panel{display:flex;flex-direction:column;background:#fffdf6;border-radius:var(--r-md);border:2px solid #ecdfb8;
+    overflow:hidden;height:280px;}
+  .chat-msgs{flex:1;overflow-y:auto;padding:10px 12px;font-size:13px;}
+  .chat-msg{margin-bottom:7px;line-height:1.4;}
+  .chat-msg b{color:#7a2e1f;}
+  .chat-msg.sys{color:var(--ink-soft);font-style:italic;font-size:12px;}
+  .chat-input-row{display:flex;border-top:2px solid #ecdfb8;}
+  .chat-input-row input{flex:1;border:none;padding:10px 12px;font-size:13.5px;}
+  .chat-input-row input:focus{outline:none;}
+  .chat-input-row button{border:none;background:var(--gold);color:#3a2400;font-weight:800;padding:0 16px;cursor:pointer;}
+
+  .lobby-controls{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;}
+  .mic-toggle{display:flex;align-items:center;gap:8px;background:#fff;border:2px solid #ecdfb8;border-radius:999px;
+    padding:9px 16px;cursor:pointer;font-weight:800;font-size:13px;color:#3a2b16;}
+  .mic-toggle.muted{background:#f5dede;border-color:#e0a9a9;color:#8a2020;}
+  .start-btn{margin-left:auto;background:linear-gradient(180deg,#7ed08a,#2fa84f);color:#fff;border:none;font-weight:800;
+    padding:11px 22px;border-radius:999px;cursor:pointer;font-size:14px;box-shadow:0 6px 14px rgba(0,0,0,.3);}
+  .hint-note{font-size:11.5px;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
+
+  #join-game-banner{
+    display:none; position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+    z-index:999; background:linear-gradient(180deg,#ffce54,#e8a622); color:#4a2e00;
+    padding:14px 20px; border-radius:16px; box-shadow:0 12px 30px rgba(0,0,0,.5);
+    font-weight:800; font-size:14px; display:none; align-items:center; gap:14px;
+    animation:joinPulse 1.4s ease-in-out infinite;
+  }
+  #join-game-banner.show{display:flex;}
+  #matchmaking-overlay{
+    display:none; position:fixed; inset:0; z-index:998; background:rgba(20,15,10,.82);
+    align-items:center; justify-content:center;
+  }
+  #matchmaking-overlay.show{display:flex;}
+  .mm-box{background:var(--cream-2,#fbf3de); border:4px solid #c9a24a; border-radius:20px;
+    padding:32px 40px; text-align:center; min-width:260px;}
+  .mm-spinner{font-size:40px; animation:mmSpin 1.6s linear infinite;}
+  @keyframes mmSpin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .mm-text{margin-top:10px; font-weight:800; font-size:16px; color:#7a2e1f;}
+  .mm-countdown{margin-top:14px; font-size:52px; font-weight:900; color:#e8a622;}
+  #join-game-btn{
+    background:#2fa84f;color:#fff;border:none;padding:10px 18px;border-radius:999px;
+    font-weight:800;font-size:14px;cursor:pointer;
+  }
+  @keyframes joinPulse{ 0%,100%{transform:translateX(-50%) scale(1);} 50%{transform:translateX(-50%) scale(1.04);} }
+
+  /* shop */
+  .shop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;}
+  .skin-card{border:2px solid #ecdfb8;border-radius:var(--r-md);padding:12px;text-align:center;background:#fff;}
+  .skin-card .skin-swatch{width:44px;height:44px;border-radius:50%;margin:0 auto 8px;border:3px solid rgba(0,0,0,.15);}
+  .skin-card .skin-name{font-weight:800;font-size:13px;}
+  .skin-card .skin-price{font-size:11.5px;color:var(--ink-soft);margin:4px 0 8px;}
+  .skin-card button{width:100%;padding:7px 0;border-radius:999px;border:none;font-weight:800;font-size:12px;cursor:pointer;}
+  .skin-card button.own{background:#e3ddc9;color:#5a4526;}
+  .skin-card button.buy{background:var(--gold);color:#3a2400;}
+  .skin-card button.equipped{background:#2fa84f;color:#fff;}
+
+  .toast{
+    position:fixed;top:14px;left:50%;transform:translateX(-50%);background:rgba(20,120,60,.94);color:#fff;
+    padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;opacity:0;transition:opacity .3s, transform .3s;
+    z-index:200;box-shadow:0 6px 14px rgba(0,0,0,.35);pointer-events:none;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(6px);}
+  /* ---------- Màn hình đăng nhập ---------- */
+  #app-main{display:none;}
+  #login-screen{
+    position:fixed;inset:0;z-index:500;
+    background-position:center;background-size:cover;background-repeat:no-repeat;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .login-box{
+    width:min(92vw,420px);display:flex;flex-direction:column;align-items:center;gap:14px;
+    margin-top:2vh;
+  }
+  .login-logo{width:min(85vw,460px);height:auto;display:block;margin-bottom:2px;
+    filter:drop-shadow(0 8px 18px rgba(0,0,0,.5));}
+  .login-sub-row{display:flex;gap:8px;width:100%;align-items:center;justify-content:center;flex-wrap:wrap;}
+  .login-sub-btn{flex:1;min-width:100px;max-width:150px;cursor:pointer;border:none;background:none;padding:0;
+    transition:transform .15s ease, filter .15s ease;}
+  .login-sub-btn img{width:100%;display:block;}
+  .login-sub-btn:hover{transform:translateY(-4px) scale(1.05);filter:drop-shadow(0 8px 12px rgba(0,0,0,.5));}
+  .login-sub-btn:active{transform:translateY(-1px) scale(1.01);}
+  .login-err{min-height:18px;color:#ffb3b3;font-weight:800;font-size:12.5px;text-align:center;
+    text-shadow:0 1px 3px rgba(0,0,0,.7);}
+</style>
+</head>
+<body>
+<div id="login-screen" style="background-image:url('assets/jpeg_2.jpg');">
+  <div class="login-box">
+    <img src="assets/webp_1.webp" alt="Cờ Trắng Tay" class="login-logo" />    <div class="login-err" id="login-err"></div>
+    <div class="login-sub-row">      <button class="login-sub-btn" id="login-google-btn"><img src="assets/webp_2.webp" alt="Google" /></button>
+      <button class="login-sub-btn" id="login-guest-btn"><img src="assets/webp_3.webp" alt="Khách" /></button>
+    </div>
+  </div>
+</div>
+<div id="app-main">
+<div class="wrap">
+
+  <!-- ================= TOP BAR ================= -->
+  <div class="topbar">
+    <div class="profile-bar">
+      <div class="avatar-frame">
+        <div class="avatar-crown">👑</div>
+        <div class="avatar-ring-glow"></div>
+        <div class="avatar-ring-inner"></div>
+        <div class="avatar-btn" id="avatar-btn" style="background:var(--p1);">
+          <span id="avatar-emoji">🙂</span>
+          <span class="edit-dot">✎</span>
+        </div>
+        <div class="avatar-star">⭐</div>
+      </div>
+      <div class="profile-mid">
+        <div class="name-row">
+          <input id="name-input" maxlength="16" value="Người chơi" />
+          <span class="tier-chip" id="tier-chip">Đồng</span>
+        </div>
+        <div class="pid-row">ID: <span id="pid-text">CTP-000000</span><button class="pid-copy-btn" id="copy-pid-btn" title="Sao chép ID">📋</button></div>
+        <div class="pid-row" id="google-account-row">
+          <button id="google-login-btn" style="background:#fff;color:#3a3a3a;border:none;border-radius:999px;
+            padding:3px 10px 3px 4px;font-size:10.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:5px;">
+            <span style="background:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:10px;">🇬</span>
+            Đăng nhập Google
+          </button>
+          <span id="google-account-status" style="display:none;font-size:10.5px;color:#cdeecb;"></span>
+        </div>
+        <div class="xp-bar-wrap"><div class="xp-bar-fill" id="xp-fill" style="width:0%;"></div></div>
+        <div class="xp-label" id="xp-label">0 / 100 XP</div>
+      </div>
+      <div class="gold-chip">💰 <span id="gold-amount">0</span></div>
+    </div>
+    <div class="icon-toolbar">
+      <div class="icon-toolbar-row">
+        <button class="icon-btn" id="open-chat-btn" title="Trò chuyện"><img src="assets/webp_4.webp" alt="Trò chuyện" /></button>
+        <button class="icon-btn" id="open-friends-btn" title="Bạn bè"><img src="assets/webp_5.webp" alt="Bạn bè" /></button>
+        <button class="icon-btn" id="open-leaderboard-btn" title="Xếp hạng"><img src="assets/webp_6.webp" alt="Xếp hạng" /></button>
+        <button class="icon-btn" id="open-shop-btn" title="Cửa hàng"><img src="assets/webp_7.webp" alt="Cửa hàng" /></button>
+        <button class="icon-btn" id="open-settings-btn" title="Cài đặt"><img src="assets/webp_8.webp" alt="Cài đặt" /></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODE CARDS ================= -->
+  <div class="modes">
+    <button class="mode-card" id="mode-quick" aria-label="Vào trận nhanh">
+      <img src="assets/jpeg_3.jpg" alt="Vào trận nhanh" />
+    </button>
+    <button class="mode-card" id="mode-friend" aria-label="Chơi với bạn">
+      <img src="assets/jpeg_4.jpg" alt="Chơi với bạn" />
+    </button>
+    <button class="mode-card" id="mode-bot" aria-label="Chơi với máy">
+      <img src="assets/jpeg_5.jpg" alt="Chơi với máy" />
+    </button>
+  </div>
+
+  <!-- ================= LOBBY (room) ================= -->
+  <div class="lobby-wrap hidden" id="lobby-wrap">
+    <div class="lobby-head">
+      <div>
+        <h2 style="margin:0;font-size:17px;color:#7a2e1f;" id="lobby-title">Phòng chờ</h2>
+        <div class="room-code-box" id="room-code-box">
+          <span>Mã phòng: <b id="room-code-text">----</b></span>
+          <button class="copy-btn" id="copy-code-btn">Sao chép</button>
+        </div>
+      </div>
+      <button class="leave-btn" id="leave-room-btn">↩ Rời phòng</button>
+    </div>
+
+    <div class="lobby-body">
+      <div class="players-panel">
+        <h3>Người chơi trong phòng</h3>
+        <div id="player-list"></div>
+      </div>
+      <div class="chat-panel">
+        <div class="chat-msgs" id="chat-msgs"></div>
+        <div class="chat-input-row">
+          <input id="chat-input" placeholder="Nhắn gì đó..." maxlength="200" />
+          <button id="chat-send-btn">Gửi</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="lobby-controls">
+      <button class="mic-toggle" id="mic-toggle-btn">🎙️ Mic: Bật</button>
+      <button class="start-btn" id="start-game-btn">▶️ Bắt đầu ván chơi</button>
+    </div>
+    <div class="hint-note" id="lobby-hint">Đang kết nối...</div>
+  </div>
+
+  <div id="join-game-banner">
+    🎮 Chủ phòng đã bắt đầu ván chơi!
+    <button id="join-game-btn">Vào game ngay ▶️</button>
+  </div>
+
+  <div id="matchmaking-overlay">
+    <div class="mm-box">
+      <div class="mm-spinner">🔎</div>
+      <div class="mm-text" id="mm-text">Đang tìm người chơi... (1/4)</div>
+      <div class="mm-countdown" id="mm-countdown" style="display:none;"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================= AVATAR PICKER MODAL ================= -->
+<div class="overlay hidden" id="avatar-modal">
+  <div class="modal-card" style="position:relative;">
+    <button class="close-x" data-close="avatar-modal">✕</button>
+    <h2>Chọn ảnh đại diện</h2>
+    <p class="sub">Chọn biểu tượng và màu nền cho hồ sơ của bạn</p>
+    <div class="field-label">Biểu tượng</div>
+    <div class="avatar-grid" id="emoji-grid"></div>
+    <div class="field-label">Màu nền</div>
+    <div class="avatar-grid" id="color-grid" style="grid-template-columns:repeat(4,1fr);"></div>
+    <div class="btn-row"><button class="btn btn-gold" style="flex:1" id="avatar-done-btn">Xong</button></div>
+  </div>
+</div>
+
+<!-- ================= FRIEND MODE MODAL ================= -->
+<div class="overlay hidden" id="friend-modal">
+  <div class="modal-card" style="position:relative;">
+    <button class="close-x" data-close="friend-modal">✕</button>
+    <h2>Chơi với bạn</h2>
+    <p class="sub">Tạo phòng mới rồi gửi mã cho bạn bè, hoặc nhập mã phòng đã có.</p>
+    <div class="tab-row">
+      <button class="tab-btn active" id="tab-create">Tạo phòng</button>
+      <button class="tab-btn" id="tab-join">Nhập mã</button>
+    </div>
+    <div id="pane-create">
+      <div class="field-label">Phòng của bạn sẽ dùng ID người chơi làm mã phòng</div>
+      <div class="room-code-box" style="margin-bottom:6px;"><span>ID của bạn: <b id="create-pid-preview">CTP-000000</b></span></div>
+      <div class="btn-row"><button class="btn btn-gold" style="flex:1" id="create-room-btn">🏠 Tạo phòng mới</button></div>
+    </div>
+    <div id="pane-join" class="hidden">
+      <div class="field-label">Nhập ID phòng bạn bè đã gửi</div>
+      <input class="text-input" id="join-code-input" placeholder="VD: CTP-7K2QAF" style="text-transform:uppercase;" maxlength="14"/>
+      <div class="btn-row"><button class="btn btn-gold" style="flex:1" id="join-room-btn">🚪 Vào phòng</button></div>
+    </div>
+    <div class="err-msg" id="friend-modal-err"></div>
+  </div>
+</div>
+
+<!-- ================= SHOP MODAL ================= -->
+<div class="overlay hidden" id="shop-modal">
+  <div class="modal-card" style="max-width:520px;position:relative;">
+    <button class="close-x" data-close="shop-modal">✕</button>
+    <h2>🛍️ Cửa hàng quân cờ</h2>
+    <p class="sub">Dùng vàng kiếm được để mở khoá màu quân cờ &amp; khung viền hồ sơ mới.</p>
+    <div class="shop-grid" id="shop-grid"></div>
+    <div class="err-msg" id="shop-err"></div>
+  </div>
+</div>
+
+<!-- ================= FRIENDS MODAL ================= -->
+<div class="overlay hidden" id="friends-modal">
+  <div class="modal-card" style="position:relative;">
+    <button class="close-x" data-close="friends-modal">✕</button>
+    <h2>👥 Bạn bè</h2>
+    <p class="sub">Thêm bạn bằng ID người chơi của họ để vào phòng nhau nhanh hơn, không cần gửi mã mỗi lần.</p>
+    <div class="field-label">Thêm bạn mới</div>
+    <input class="text-input" id="add-friend-pid" placeholder="ID bạn bè, VD: CTP-7K2QAF" style="margin-bottom:8px;text-transform:uppercase;" maxlength="14"/>
+    <input class="text-input" id="add-friend-name" placeholder="Biệt danh (tuỳ chọn)" maxlength="16"/>
+    <div class="btn-row"><button class="btn btn-gold" style="flex:1" id="add-friend-btn">➕ Thêm bạn</button></div>
+    <div class="err-msg" id="add-friend-err"></div>
+    <div class="field-label" style="margin-top:16px;">Danh sách bạn bè</div>
+    <div id="friend-list"></div>
+  </div>
+</div>
+
+<!-- ================= LEADERBOARD MODAL ================= -->
+<div class="overlay hidden" id="leaderboard-modal">
+  <div class="modal-card" style="position:relative;">
+    <button class="close-x" data-close="leaderboard-modal">✕</button>
+    <h2>🏆 Bảng xếp hạng</h2>
+    <p class="sub" id="lb-sub">Xếp hạng theo điểm kinh nghiệm (XP)</p>
+    <div class="tab-row">
+      <button class="tab-btn active" id="lb-tab-friends">Bạn bè</button>
+      <button class="tab-btn" id="lb-tab-world">Đã từng gặp</button>
+    </div>
+    <div id="lb-list"></div>
+  </div>
+</div>
+
+<!-- ================= SETTINGS MODAL ================= -->
+<div class="overlay hidden" id="settings-modal">
+  <div class="modal-card" style="position:relative;">
+    <button class="close-x" data-close="settings-modal">✕</button>
+    <h2>⚙️ Cài đặt</h2>
+    <p class="sub">Một vài thiết lập nhanh cho hồ sơ và thiết bị của bạn.</p>
+    <div class="field-label">Hồ sơ</div>
+    <div class="btn-row" style="margin-top:0;">
+      <button class="btn btn-ghost" style="flex:1" id="settings-edit-avatar-btn">🖼️ Đổi ảnh đại diện</button>
+    </div>
+    <div class="field-label">Âm thanh</div>
+    <div class="audio-row">
+      <button class="audio-toggle" id="music-toggle-btn" title="Bật/tắt nhạc nền">🎵</button>
+      <div class="audio-slider-wrap">
+        <div class="audio-slider-label"><span>Nhạc nền</span><span id="music-vol-label">50%</span></div>
+        <input type="range" id="music-vol-slider" min="0" max="100" value="50" />
+      </div>
+    </div>
+    <div class="audio-row">
+      <button class="audio-toggle" id="sfx-toggle-btn" title="Bật/tắt hiệu ứng âm thanh">🔊</button>
+      <div class="audio-slider-wrap">
+        <div class="audio-slider-label"><span>Hiệu ứng âm thanh</span><span id="sfx-vol-label">70%</span></div>
+        <input type="range" id="sfx-vol-slider" min="0" max="100" value="70" />
+      </div>
+    </div>
+    <div class="field-label">Dữ liệu cục bộ</div>
+    <p class="sub" style="margin-bottom:8px;">Cấp bậc, vàng, bạn bè hiện lưu ngay trên trình duyệt này (chưa đồng bộ tài khoản).</p>
+    <div class="btn-row" style="margin-top:0;">
+      <button class="btn btn-ghost" style="flex:1;background:#f0d3d3;color:#8a2020;" id="settings-reset-btn">🗑️ Xoá & làm mới hồ sơ</button>
+    </div>
+    <div class="err-msg" id="settings-err"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   0. DỮ LIỆU LƯU CỤC BỘ (localStorage) - hồ sơ, rank, vàng, skin
+   ============================================================ */
+const STORE_KEY = 'ctp_profile_v1';
+const EMOJIS = ['🙂','😎','🤠','🥳','🐯','🦁','🐼','🐸','🦊','🐵','👑','🧙'];
+const AV_COLORS = ['#2f6fed','#c0293d','#e0b400','#2fa84f','#8a4fd0','#00a6a6','#e0693f','#5a4526'];
+const TIERS = [
+  {name:'Đồng', min:0, color:'var(--tier-dong)'},
+  {name:'Bạc', min:100, color:'var(--tier-bac)'},
+  {name:'Vàng', min:300, color:'var(--tier-vang)'},
+  {name:'Bạch Kim', min:700, color:'var(--tier-ptin)'},
+  {name:'Kim Cương', min:1500, color:'var(--tier-kc)'},
+];
+const SKINS = [
+  {id:'classic', name:'Cổ điển', color:'#c9c9c9', price:0},
+  {id:'ruby', name:'Ruby đỏ', color:'#c0293d', price:80},
+  {id:'sapphire', name:'Sapphire xanh', color:'#2f6fed', price:80},
+  {id:'emerald', name:'Emerald lục', color:'#2fa84f', price:80},
+  {id:'gold', name:'Vàng khối', color:'#e8a622', price:150},
+  {id:'amethyst', name:'Tím Amethyst', color:'#8a4fd0', price:150},
+  {id:'obsidian', name:'Obsidian đen', color:'#222', price:220},
+  {id:'rainbow', name:'Cầu vồng', color:'conic-gradient(from 0deg,#f66,#ff6,#6f6,#6ff,#66f,#f6f,#f66)', price:400},
+];
+
+function genPid(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s=''; for(let i=0;i<6;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return 'CTP-'+s;
+}
+function loadProfile(){
+  let p;
+  try{ p = JSON.parse(localStorage.getItem(STORE_KEY)); }catch(e){ p=null; }
+  if(!p){
+    p = { name:'Người chơi', emoji:'🙂', color:AV_COLORS[0], xp:0, gold:120, ownedSkins:['classic'], equippedSkin:'classic',
+      lastClaim:0, pid:genPid(), friends:[], seenPlayers:{}, musicOn:true, musicVol:50, sfxOn:true, sfxVol:70 };
+    saveProfile(p);
+  }
+  if(!p.ownedSkins) p.ownedSkins=['classic'];
+  if(!p.equippedSkin) p.equippedSkin='classic';
+  if(!p.pid) p.pid = genPid();
+  if(!p.friends) p.friends = [];
+  if(!p.seenPlayers) p.seenPlayers = {};
+  if(p.musicOn===undefined) p.musicOn = true;
+  if(p.musicVol===undefined) p.musicVol = 50;
+  if(p.sfxOn===undefined) p.sfxOn = true;
+  if(p.sfxVol===undefined) p.sfxVol = 70;
+  return p;
+}
+function saveProfile(p){
+  localStorage.setItem(STORE_KEY, JSON.stringify(p));
+  syncProfileToCloud(p);
+}
+let profile = loadProfile();
+
+function tierFor(xp){
+  let t = TIERS[0];
+  for(const tier of TIERS){ if(xp>=tier.min) t=tier; }
+  return t;
+}
+function nextTierFor(xp){
+  for(const tier of TIERS){ if(xp<tier.min) return tier; }
+  return null;
+}
+function renderProfileBar(){
+  document.getElementById('name-input').value = profile.name;
+  document.getElementById('avatar-emoji').textContent = profile.emoji;
+  document.getElementById('avatar-btn').style.background = profile.color;
+  document.getElementById('gold-amount').textContent = profile.gold;
+  document.getElementById('pid-text').textContent = profile.pid;
+  const pidPreview = document.getElementById('create-pid-preview');
+  if(pidPreview) pidPreview.textContent = profile.pid;
+  const tier = tierFor(profile.xp);
+  const next = nextTierFor(profile.xp);
+  const chip = document.getElementById('tier-chip');
+  chip.textContent = tier.name;
+  chip.style.background = tier.color;
+  const span = next ? (next.min - tier.min) : 500;
+  const into = profile.xp - tier.min;
+  const pct = next ? Math.min(100, Math.round(into/span*100)) : 100;
+  document.getElementById('xp-fill').style.width = pct+'%';
+  document.getElementById('xp-label').textContent = next ? (profile.xp+' / '+next.min+' XP') : (profile.xp+' XP (Cao nhất)');
+}
+renderProfileBar();
+
+document.getElementById('name-input').addEventListener('change', e=>{
+  const v = e.target.value.trim() || 'Người chơi';
+  profile.name = v; saveProfile(profile); renderProfileBar();
+  if(myId && roster[myId]){ roster[myId].name = v; renderPlayers(); broadcastAll(helloPayload()); }
+});
+function copyToClipboard(text, okMsg){
+  const done = ()=>showToast(okMsg);
+  const fail = ()=>{
+    // Fallback for insecure/non-HTTPS contexts where navigator.clipboard is unavailable
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if(ok) done(); else showToast('Không sao chép được — hãy tự chọn và copy: '+text);
+    }catch(e){ showToast('Không sao chép được — hãy tự chọn và copy: '+text); }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(fail);
+  } else fail();
+}
+document.getElementById('copy-pid-btn').addEventListener('click', ()=>{
+  copyToClipboard(profile.pid, 'Đã sao chép ID: '+profile.pid);
+});
+
+function showToast(msg, sfx){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>el.classList.remove('show'), 2200);
+  playSfx(sfx || 'notify');
+}
+
+/* ---------- modal open/close helpers ---------- */
+function openModal(id){ document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id){ document.getElementById(id).classList.add('hidden'); }
+document.querySelectorAll('[data-close]').forEach(btn=>{
+  btn.addEventListener('click', ()=>closeModal(btn.dataset.close));
+});
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.add('hidden'); });
+});
+
+/* ============================================================
+   1. AVATAR PICKER
+   ============================================================ */
+(function initAvatarPicker(){
+  const eg = document.getElementById('emoji-grid');
+  const cg = document.getElementById('color-grid');
+  EMOJIS.forEach(em=>{
+    const d = document.createElement('div');
+    d.className = 'avatar-opt'+(em===profile.emoji?' sel':'');
+    d.textContent = em; d.style.background = '#f3ecd8';
+    d.addEventListener('click', ()=>{
+      eg.querySelectorAll('.avatar-opt').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel'); profile.emoji = em;
+    });
+    eg.appendChild(d);
+  });
+  AV_COLORS.forEach(c=>{
+    const d = document.createElement('div');
+    d.className = 'avatar-opt'+(c===profile.color?' sel':'');
+    d.style.background = c;
+    d.addEventListener('click', ()=>{
+      cg.querySelectorAll('.avatar-opt').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel'); profile.color = c;
+    });
+    cg.appendChild(d);
+  });
+  document.getElementById('avatar-btn').addEventListener('click', ()=>openModal('avatar-modal'));
+  document.getElementById('avatar-done-btn').addEventListener('click', ()=>{
+    saveProfile(profile); renderProfileBar(); closeModal('avatar-modal');
+    if(myId && roster[myId]){ renderPlayers(); }
+  });
+})();
+
+/* ============================================================
+   2. SHOP
+   ============================================================ */
+function renderShop(){
+  const grid = document.getElementById('shop-grid');
+  grid.innerHTML = '';
+  SKINS.forEach(sk=>{
+    const owned = profile.ownedSkins.includes(sk.id);
+    const equipped = profile.equippedSkin === sk.id;
+    const card = document.createElement('div');
+    card.className = 'skin-card';
+    card.innerHTML = `
+      <div class="skin-swatch" style="background:${sk.color};"></div>
+      <div class="skin-name">${sk.name}</div>
+      <div class="skin-price">${sk.price===0?'Miễn phí':'💰 '+sk.price}</div>
+      <button data-id="${sk.id}" class="${equipped?'equipped':(owned?'own':'buy')}">
+        ${equipped?'✓ Đang dùng':(owned?'Dùng skin này':'Mua ngay')}
+      </button>`;
+    grid.appendChild(card);
+  });
+  grid.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.id;
+      const sk = SKINS.find(s=>s.id===id);
+      const owned = profile.ownedSkins.includes(id);
+      if(profile.equippedSkin===id) return;
+      if(owned){
+        profile.equippedSkin = id; saveProfile(profile); renderShop();
+        showToast('Đã trang bị skin '+sk.name);
+      } else {
+        if(profile.gold < sk.price){
+          document.getElementById('shop-err').textContent = 'Bạn không đủ vàng để mua skin này.';
+          return;
+        }
+        profile.gold -= sk.price; profile.ownedSkins.push(id); profile.equippedSkin = id;
+        saveProfile(profile); renderProfileBar(); renderShop();
+        document.getElementById('shop-err').textContent='';
+        showToast('Đã mua & trang bị skin '+sk.name+'!', 'coin');
+      }
+    });
+  });
+}
+document.getElementById('open-shop-btn').addEventListener('click', ()=>{ renderShop(); openModal('shop-modal'); });
+
+/* ============================================================
+   3. CHƠI VỚI MÁY -> mở thẳng file cờ
+   ============================================================ */
+document.getElementById('mode-bot').addEventListener('click', ()=>{
+  window.location.href = 'CTPbot.html';
+});
+
+/* ============================================================
+   4. PEERJS - PHÒNG CHUNG (chơi với bạn / vào trận nhanh)
+   ============================================================ */
+const PUBLIC_ROOM_ID = 'ctp-quickmatch-public-lobby-v1';
+
+let peer = null, myId = null, isHost = false, roomCode = '', isPublicRoom=false;
+let localStream = null, micOn = true;
+let dataConns = {};   // peerId -> DataConnection
+let mediaCalls = {};  // peerId -> MediaConnection
+let audioEls = {};    // peerId -> <audio>
+let roster = {};       // peerId -> {name, emoji, color, muted, speaking}
+let analysers = {};    // peerId -> {analyser, raf}
+
+function genCode(len){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s=''; for(let i=0;i<len;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+function resetRoomState(){
+  Object.values(dataConns).forEach(c=>{ try{c.close();}catch(e){} });
+  Object.values(mediaCalls).forEach(c=>{ try{c.close();}catch(e){} });
+  Object.values(audioEls).forEach(a=>{ try{a.remove();}catch(e){} });
+  Object.values(analysers).forEach(a=>{ if(a.raf) cancelAnimationFrame(a.raf); });
+  dataConns={}; mediaCalls={}; audioEls={}; roster={}; analysers={};
+  if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
+  if(peer){ try{peer.destroy();}catch(e){} peer=null; }
+  myId=null; isHost=false; roomCode=''; isPublicRoom=false;
+  netStartedLobby=false; mmCountdownStarted=false;
+  document.getElementById('matchmaking-overlay').classList.remove('show');
+}
+
+async function getMic(){
+  try{
+    localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    setupSpeakingDetector(myId, localStream);
+    return true;
+  }catch(e){
+    localStream = null;
+    document.getElementById('mic-toggle-btn').disabled = true;
+    document.getElementById('mic-toggle-btn').textContent = '🎙️ Không có mic';
+    return false;
+  }
+}
+
+function setupSpeakingDetector(id, stream){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const src = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    src.connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    function loop(){
+      analyser.getByteFrequencyData(data);
+      let sum=0; for(let i=0;i<data.length;i++) sum+=data[i];
+      const avg = sum/data.length;
+      const speaking = avg > 14;
+      if(roster[id]) roster[id].speaking = speaking;
+      updateSpeakingUI(id, speaking);
+      analysers[id].raf = requestAnimationFrame(loop);
+    }
+    analysers[id] = {analyser, raf:null};
+    loop();
+  }catch(e){ /* ignore analyser errors */ }
+}
+function updateSpeakingUI(id, speaking){
+  const row = document.querySelector('.player-row[data-id="'+id+'"]');
+  if(row) row.classList.toggle('speaking', !!speaking);
+}
+
+function addChatMsg(name, text, sys){
+  const box = document.getElementById('chat-msgs');
+  const d = document.createElement('div');
+  d.className = 'chat-msg'+(sys?' sys':'');
+  d.innerHTML = sys ? text : ('<b>'+escapeHtml(name)+':</b> '+escapeHtml(text));
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function syncLobbyButtons(){
+  // Luôn đồng bộ nút Bắt đầu theo đúng trạng thái isHost hiện tại,
+  // gọi riêng lẻ (ngoài renderPlayers) để không bị lỗi khác che mất.
+  const btn = document.getElementById('start-game-btn');
+  if(btn) btn.style.display = isHost ? 'inline-flex' : 'none';
+}
+
+function renderPlayers(){
+  syncLobbyButtons();
+  const list = document.getElementById('player-list');
+  list.innerHTML = '';
+  Object.keys(roster).forEach(id=>{
+    try{
+      const r = roster[id];
+      const row = document.createElement('div');
+      row.className = 'player-row'+(r.speaking?' speaking':'');
+      row.dataset.id = id;
+      const isSelf = id===myId;
+      const alreadyFriend = !isSelf && r.pid && profile.friends.some(f=>f.pid===r.pid);
+      const canAdd = !isSelf && r.pid && !alreadyFriend;
+      row.innerHTML = `
+        <div class="pav" style="background:${r.color||'#999'};">${r.emoji||'🙂'}</div>
+        <div class="pname">${escapeHtml(r.name||'')}${isSelf?'<span class="you-tag">Bạn</span>':''}</div>
+        <div class="mic-state">${r.muted?'🔇':'🎙️'}</div>
+        ${canAdd?`<button class="add-friend-inline" data-pid="${r.pid}" data-name="${escapeHtml(r.name||'')}" data-emoji="${r.emoji||'🙂'}" data-color="${r.color||'#999'}">＋ Kết bạn</button>`:''}`;
+      list.appendChild(row);
+    }catch(e){ console.error('renderPlayers row error', e); }
+  });
+  list.querySelectorAll('.add-friend-inline').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      profile.friends.push({ pid:btn.dataset.pid, name:btn.dataset.name, emoji:btn.dataset.emoji, color:btn.dataset.color, xp:0, gold:0 });
+      saveProfile(profile);
+      showToast('Đã kết bạn với '+btn.dataset.name+'!');
+      renderPlayers();
+    });
+  });
+  updateMatchmakingUI();
+}
+let mmCountdownStarted = false;
+function updateMatchmakingUI(){
+  const overlay = document.getElementById('matchmaking-overlay');
+  if(!isPublicRoom || netStartedLobby){ overlay.classList.remove('show'); return; }
+  const count = Object.keys(roster).length;
+  overlay.classList.add('show');
+  document.getElementById('mm-text').textContent = 'Đang tìm người chơi... ('+count+'/4)';
+  if(count>=4 && isHost && !mmCountdownStarted){
+    mmCountdownStarted = true;
+    broadcastAll({t:'matchCountdown'});
+    runMatchCountdown(()=>{
+      document.getElementById('start-game-btn').click();
+    });
+  }
+}
+let netStartedLobby = false;
+function runMatchCountdown(onDone){
+  const overlay = document.getElementById('matchmaking-overlay');
+  overlay.classList.add('show');
+  document.querySelector('.mm-spinner').style.display = 'none';
+  document.getElementById('mm-text').textContent = 'Đủ người rồi! Chuẩn bị vào trận...';
+  const cd = document.getElementById('mm-countdown');
+  cd.style.display = 'block';
+  const steps = ['3','2','1','BẮT ĐẦU!'];
+  let i = 0;
+  function tick(){
+    cd.textContent = steps[i];
+    playTone(i<3 ? 520+i*120 : 900, i<3?0.15:0.3, i<3?'sine':'triangle', sfxGain, 0.9);
+    i++;
+    if(i<steps.length) setTimeout(tick, 700);
+    else setTimeout(()=>{
+      overlay.classList.remove('show');
+      document.querySelector('.mm-spinner').style.display = '';
+      cd.style.display = 'none';
+      mmCountdownStarted = false;
+      onDone && onDone();
+    }, 700);
+  }
+  tick();
+}
+
+function broadcastAll(obj){
+  Object.values(dataConns).forEach(c=>{ if(c.open) c.send(obj); });
+}
+function broadcastPeerList(){
+  broadcastAll({t:'peers', roster});
+}
+
+function connectToPeerFull(remoteId){
+  if(!remoteId || remoteId===myId || dataConns[remoteId]) return;
+  const conn = peer.connect(remoteId);
+  setupDataConn(conn);
+  const call = peer.call(remoteId, localStream || undefined);
+  if(call){
+    call.on('stream', s=>attachRemoteAudio(remoteId, s));
+    mediaCalls[remoteId] = call;
+  }
+}
+
+function helloPayload(){
+  return { t:'hello', id:myId, name:profile.name, emoji:profile.emoji, color:profile.color,
+    pid:profile.pid, xp:profile.xp, gold:profile.gold };
+}
+
+function setupDataConn(conn){
+  dataConns[conn.peer] = conn;
+  conn.on('open', ()=>{
+    if(isHost && isPublicRoom && Object.keys(roster).length>=4 && !roster[conn.peer]){
+      conn.send({t:'roomFull'});
+      setTimeout(()=>{ try{conn.close();}catch(e){} }, 300);
+      return;
+    }
+    conn.send(helloPayload());
+  });
+  conn.on('data', data=>handleData(conn.peer, data));
+  conn.on('close', ()=>handlePeerLeave(conn.peer));
+  conn.on('error', ()=>handlePeerLeave(conn.peer));
+}
+
+function attachRemoteAudio(id, stream){
+  let a = audioEls[id];
+  if(!a){ a = document.createElement('audio'); a.autoplay = true; a.style.display='none'; document.body.appendChild(a); audioEls[id]=a; }
+  a.srcObject = stream;
+  setupSpeakingDetector(id, stream);
+}
+
+function handleData(fromId, data){
+  if(data.t==='hello'){
+    const isNew = !roster[fromId];
+    const prevMuted = roster[fromId] ? roster[fromId].muted : false;
+    roster[fromId] = { name:data.name, emoji:data.emoji, color:data.color, muted:prevMuted, speaking:false, pid:data.pid };
+    if(data.pid){
+      profile.seenPlayers[data.pid] = { name:data.name, emoji:data.emoji, color:data.color, xp:data.xp||0, gold:data.gold||0, lastSeen:Date.now() };
+      const fr = profile.friends.find(f=>f.pid===data.pid);
+      if(fr){ fr.name=data.name; fr.emoji=data.emoji; fr.color=data.color; fr.xp=data.xp||0; fr.gold=data.gold||0; }
+      saveProfile(profile);
+    }
+    renderPlayers();
+    if(isNew){ addChatMsg('', (data.name)+' đã tham gia sảnh', true); showToast(data.name+' đã vào phòng', 'join'); }
+    if(isHost) broadcastPeerList();
+  } else if(data.t==='peers'){
+    Object.keys(data.roster).forEach(pid=>{
+      if(pid===myId) return;
+      if(!roster[pid]) roster[pid] = data.roster[pid];
+      if(!dataConns[pid]) connectToPeerFull(pid);
+    });
+    renderPlayers();
+  } else if(data.t==='chat'){
+    addChatMsg(data.name, data.text, false);
+  } else if(data.t==='mic'){
+    if(roster[fromId]){ roster[fromId].muted = data.muted; renderPlayers(); }
+  } else if(data.t==='gamestart'){
+    if(!isHost){
+      gameSessionId = data.sessionId;
+      netStartedLobby = true;
+      document.getElementById('matchmaking-overlay').classList.remove('show');
+      document.getElementById('join-game-banner').classList.add('show');
+    }
+  } else if(data.t==='roomFull'){
+    showToast('Sảnh công khai vừa đủ 4 người, đợi ván này bắt đầu rồi vào trận sau nhé!', 'error');
+    resetRoomState();
+    document.getElementById('lobby-wrap').classList.add('hidden');
+  } else if(data.t==='matchCountdown'){
+    if(!isHost) runMatchCountdown(null);
+  }
+}
+
+function handlePeerLeave(pid){
+  const name = roster[pid] ? roster[pid].name : 'Một người chơi';
+  delete dataConns[pid]; delete mediaCalls[pid];
+  if(audioEls[pid]){ audioEls[pid].remove(); delete audioEls[pid]; }
+  if(analysers[pid]){ if(analysers[pid].raf) cancelAnimationFrame(analysers[pid].raf); delete analysers[pid]; }
+  delete roster[pid];
+  renderPlayers();
+  addChatMsg('', name+' đã rời phòng', true);
+  playSfx('leave');
+  if(isHost) broadcastPeerList();
+}
+
+function enterLobby(title){
+  document.getElementById('lobby-title').textContent = title;
+  document.getElementById('room-code-text').textContent = isPublicRoom ? 'CÔNG KHAI' : roomCode;
+  document.getElementById('room-code-box').style.display = isPublicRoom ? 'none' : 'flex';
+  document.getElementById('lobby-wrap').classList.remove('hidden');
+  document.getElementById('lobby-wrap').scrollIntoView({behavior:'smooth', block:'start'});
+  roster[myId] = { name:profile.name, emoji:profile.emoji, color:profile.color, muted:false, speaking:false };
+  renderPlayers();
+  document.getElementById('start-game-btn').style.display = isHost ? 'inline-flex' : 'none';
+  document.getElementById('join-game-banner').classList.remove('show');
+  document.getElementById('lobby-hint').textContent = isPublicRoom
+    ? 'Đây là sảnh công khai — bất kỳ ai bấm "Vào trận nhanh" cùng lúc sẽ được ghép vào đây với bạn.'
+    : (isHost ? 'Gửi mã phòng ở trên cho bạn bè để họ vào cùng bạn.' : 'Đợi chủ phòng bấm "Bắt đầu ván chơi" nhé.');
+}
+
+function startPeerAndJoin(customId, targetId, hostFlag, publicFlag, codeForRoom){
+  resetRoomState();
+  // QUAN TRỌNG: gán các cờ trạng thái phòng SAU khi resetRoomState() chạy,
+  // nếu không resetRoomState() sẽ đè isHost/roomCode về giá trị mặc định
+  // ngay sau khi hàm gọi (createFriendRoom/joinFriendRoom/quickMatch) vừa set đúng.
+  isHost = !!hostFlag;
+  isPublicRoom = !!publicFlag;
+  roomCode = codeForRoom || '';
+  document.getElementById('chat-msgs').innerHTML = '';
+  document.getElementById('lobby-hint').textContent = 'Đang kết nối...';
+  peer = customId ? new Peer(customId) : new Peer();
+
+  peer.on('open', id=>{
+    myId = id;
+    enterLobby(isPublicRoom ? 'Sảnh công khai' : 'Phòng của bạn');
+    getMic(); // xin quyền mic song song, không chặn việc hiển thị phòng
+    if(targetId){ connectToPeerFull(targetId); }
+  });
+  peer.on('connection', conn=>setupDataConn(conn));
+  peer.on('call', call=>{
+    call.answer(localStream || undefined);
+    call.on('stream', s=>attachRemoteAudio(call.peer, s));
+    mediaCalls[call.peer] = call;
+  });
+  peer.on('error', err=>{
+    if(isPublicRoom && err.type==='unavailable-id'){
+      // Đã có người đang chờ ở sảnh công khai -> mình vào làm khách
+      startPeerAndJoin(null, PUBLIC_ROOM_ID, false, true, PUBLIC_ROOM_ID);
+    } else if(err.type==='peer-unavailable'){
+      showToast('Không tìm thấy phòng này — bạn của bạn có thể chưa mở phòng lúc này.', 'error');
+      document.getElementById('lobby-wrap').classList.add('hidden');
+      resetRoomState();
+    } else if(err.type==='unavailable-id'){
+      showToast('ID này vừa dùng ở phiên trước còn chưa được giải phóng — đợi vài giây rồi bấm "Tạo phòng mới" lại nhé.', 'error');
+      document.getElementById('lobby-wrap').classList.add('hidden');
+      resetRoomState();
+    } else {
+      document.getElementById('lobby-hint').textContent = 'Lỗi kết nối: '+(err.type||err.message||err);
+      showToast('Lỗi kết nối: '+(err.type||err.message||err), 'error');
+    }
+  });
+}
+
+function createFriendRoom(){
+  // Mỗi lần tạo phòng -> 1 mã phòng MỚI HOÀN TOÀN (không dùng lại ID cố định của hồ sơ nữa),
+  // để 2 phòng khác nhau không bao giờ trùng mã, kể cả khi cùng 1 người tạo nhiều lần.
+  const freshRoomCode = genPid();
+  startPeerAndJoin(freshRoomCode, null, true, false, freshRoomCode);
+}
+function joinFriendRoom(code){
+  startPeerAndJoin(null, code, false, false, code);
+}
+function quickMatch(){
+  startPeerAndJoin(PUBLIC_ROOM_ID, null, true, true, PUBLIC_ROOM_ID);
+}
+
+/* ---- UI wiring: mode buttons ---- */
+document.getElementById('mode-quick').addEventListener('click', ()=>{ quickMatch(); });
+document.getElementById('mode-friend').addEventListener('click', ()=>{ openModal('friend-modal'); });
+
+document.getElementById('tab-create').addEventListener('click', ()=>{
+  document.getElementById('tab-create').classList.add('active');
+  document.getElementById('tab-join').classList.remove('active');
+  document.getElementById('pane-create').classList.remove('hidden');
+  document.getElementById('pane-join').classList.add('hidden');
+});
+document.getElementById('tab-join').addEventListener('click', ()=>{
+  document.getElementById('tab-join').classList.add('active');
+  document.getElementById('tab-create').classList.remove('active');
+  document.getElementById('pane-join').classList.remove('hidden');
+  document.getElementById('pane-create').classList.add('hidden');
+});
+document.getElementById('create-room-btn').addEventListener('click', ()=>{
+  closeModal('friend-modal'); createFriendRoom();
+});
+document.getElementById('join-room-btn').addEventListener('click', ()=>{
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  if(!code){ document.getElementById('friend-modal-err').textContent = 'Vui lòng nhập mã phòng.'; return; }
+  document.getElementById('friend-modal-err').textContent = '';
+  closeModal('friend-modal'); joinFriendRoom(code);
+});
+
+/* ---- Lobby controls ---- */
+document.getElementById('copy-code-btn').addEventListener('click', ()=>{
+  copyToClipboard(roomCode, 'Đã sao chép mã phòng!');
+});
+document.getElementById('leave-room-btn').addEventListener('click', ()=>{
+  resetRoomState();
+  document.getElementById('lobby-wrap').classList.add('hidden');
+});
+document.getElementById('chat-send-btn').addEventListener('click', sendChat);
+document.getElementById('chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter') sendChat(); });
+function sendChat(){
+  const inp = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if(!text) return;
+  addChatMsg(profile.name, text, false);
+  broadcastAll({t:'chat', name:profile.name, text});
+  inp.value = '';
+}
+document.getElementById('mic-toggle-btn').addEventListener('click', ()=>{
+  if(!localStream) return;
+  micOn = !micOn;
+  localStream.getAudioTracks().forEach(t=>t.enabled = micOn);
+  const btn = document.getElementById('mic-toggle-btn');
+  btn.textContent = micOn ? '🎙️ Mic: Bật' : '🔇 Mic: Tắt';
+  btn.classList.toggle('muted', !micOn);
+  if(roster[myId]) roster[myId].muted = !micOn;
+  renderPlayers();
+  broadcastAll({t:'mic', muted:!micOn});
+});
+let gameSessionId = null;
+function openGameWindow(){
+  netStartedLobby = true;
+  document.getElementById('matchmaking-overlay').classList.remove('show');
+  // Dùng ID PHIÊN RIÊNG cho mỗi ván (không dùng thẳng roomCode/pid cố định nữa) để
+  // 2 ván chơi khác nhau của cùng 1 người không bao giờ trùng ID với nhau.
+  const room = gameSessionId || (isPublicRoom ? PUBLIC_ROOM_ID : roomCode);
+  const params = new URLSearchParams({
+    net:'1', room, host: isHost?'1':'0',
+    pid: profile.pid, name: profile.name, emoji: profile.emoji, color: profile.color
+  });
+  // Chuyển sang trang game NGAY TRONG TAB HIỆN TẠI (thay vì mở tab mới),
+  // để trang sảnh chờ đóng hẳn -> tắt mic & nhạc nền của sảnh, không bị chồng
+  // tiếng với mic/nhạc của trang game nữa.
+  window.location.href = 'CTPplayer.html?'+params.toString();
+}
+document.getElementById('start-game-btn').addEventListener('click', ()=>{
+  if(isHost){
+    const base = isPublicRoom ? PUBLIC_ROOM_ID : roomCode;
+    gameSessionId = base+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+    broadcastAll({t:'gamestart', sessionId:gameSessionId});
+    // Đợi một nhịp ngắn để tin nhắn 'gamestart' kịp gửi đi qua kết nối
+    // trước khi trang sảnh bị đóng (điều hướng sang trang game).
+    setTimeout(openGameWindow, 150);
+  } else {
+    openGameWindow();
+  }
+});
+document.getElementById('join-game-btn').addEventListener('click', ()=>{
+  document.getElementById('join-game-banner').classList.remove('show');
+  openGameWindow();
+});
+
+/* Nút "Ghi nhận ván vừa chơi" (thưởng ngẫu nhiên, không liên quan kết quả) đã bị xoá bỏ.
+   Vàng/XP giờ được TỰ ĐỘNG tính theo kết quả thật và ghi thẳng vào hồ sơ ngay khi
+   ván kết thúc, ngay trong trang game (CTPplayer.html / CTPbot.html) — không cần
+   quay lại sảnh bấm gì nữa. */
+
+/* ============================================================
+   5. BẠN BÈ
+   ============================================================ */
+function renderFriends(){
+  const box = document.getElementById('friend-list');
+  box.innerHTML = '';
+  if(profile.friends.length===0){
+    box.innerHTML = '<div class="empty-note">Chưa có bạn bè nào. Thêm bạn bằng ID ở trên, hoặc bấm "＋ Kết bạn" ngay trong phòng chơi.</div>';
+    return;
+  }
+  profile.friends.forEach(f=>{
+    const row = document.createElement('div');
+    row.className = 'friend-row';
+    row.innerHTML = `
+      <div class="fav" style="background:${f.color||'#999'};">${f.emoji||'🙂'}</div>
+      <div class="finfo">
+        <div class="fname">${escapeHtml(f.name||f.pid)}</div>
+        <div class="fid">${f.pid}</div>
+        <div class="fstats">XP: ${f.xp||0} · 💰 ${f.gold||0}</div>
+      </div>
+      <div class="fbtns">
+        <button class="join-b" data-pid="${f.pid}">Vào phòng</button>
+        <button class="del-b" data-pid="${f.pid}">Xoá</button>
+      </div>`;
+    box.appendChild(row);
+  });
+  box.querySelectorAll('.join-b').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      closeModal('friends-modal');
+      joinFriendRoom(btn.dataset.pid);
+    });
+  });
+  box.querySelectorAll('.del-b').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      profile.friends = profile.friends.filter(f=>f.pid!==btn.dataset.pid);
+      saveProfile(profile); renderFriends();
+    });
+  });
+}
+document.getElementById('open-friends-btn').addEventListener('click', ()=>{ renderFriends(); openModal('friends-modal'); });
+document.getElementById('add-friend-btn').addEventListener('click', ()=>{
+  const pid = document.getElementById('add-friend-pid').value.trim().toUpperCase();
+  const nick = document.getElementById('add-friend-name').value.trim();
+  const errEl = document.getElementById('add-friend-err');
+  if(!pid){ errEl.textContent = 'Vui lòng nhập ID người chơi.'; return; }
+  if(pid === profile.pid){ errEl.textContent = 'Đây là ID của chính bạn.'; return; }
+  if(profile.friends.some(f=>f.pid===pid)){ errEl.textContent = 'Người này đã có trong danh sách bạn bè.'; return; }
+  const cached = profile.seenPlayers[pid];
+  profile.friends.push({
+    pid, name: nick || (cached && cached.name) || pid,
+    emoji: (cached && cached.emoji) || '🙂', color: (cached && cached.color) || '#999',
+    xp: (cached && cached.xp) || 0, gold: (cached && cached.gold) || 0
+  });
+  saveProfile(profile);
+  document.getElementById('add-friend-pid').value = '';
+  document.getElementById('add-friend-name').value = '';
+  errEl.textContent = '';
+  renderFriends();
+  showToast('Đã thêm bạn!');
+});
+
+/* ============================================================
+   6. BẢNG XẾP HẠNG
+   ============================================================ */
+let lbTab = 'friends';
+function renderLeaderboard(){
+  const list = document.getElementById('lb-list');
+  const sub = document.getElementById('lb-sub');
+  let rows = [{ pid:profile.pid, name:profile.name+' (Bạn)', emoji:profile.emoji, color:profile.color, xp:profile.xp }];
+  if(lbTab==='friends'){
+    sub.textContent = 'So sánh XP giữa bạn và bạn bè — dữ liệu tự cập nhật mỗi khi hai bên cùng vào chung phòng.';
+    profile.friends.forEach(f=> rows.push({ pid:f.pid, name:f.name, emoji:f.emoji, color:f.color, xp:f.xp||0 }));
+  } else {
+    sub.textContent = 'Những người chơi bạn từng gặp trên thiết bị này (chưa phải bảng xếp hạng máy chủ toàn cầu, vì sảnh này chạy kết nối trực tiếp không qua máy chủ trung tâm).';
+    Object.keys(profile.seenPlayers).forEach(pid=>{
+      if(pid===profile.pid) return;
+      const s = profile.seenPlayers[pid];
+      rows.push({ pid, name:s.name, emoji:s.emoji, color:s.color, xp:s.xp||0 });
+    });
+  }
+  rows.sort((a,b)=>b.xp-a.xp);
+  list.innerHTML = '';
+  if(rows.length<=1 && lbTab==='world'){
+    list.innerHTML = '<div class="empty-note">Bạn chưa từng gặp người chơi nào khác. Hãy thử "Vào trận nhanh" hoặc chơi cùng bạn bè!</div>';
+    return;
+  }
+  rows.forEach((r,i)=>{
+    const row = document.createElement('div');
+    row.className = 'lb-row'+(r.pid===profile.pid?' me':'');
+    row.innerHTML = `
+      <div class="lb-rank">#${i+1}</div>
+      <div class="lb-av" style="background:${r.color||'#999'};">${r.emoji||'🙂'}</div>
+      <div class="lb-name">${escapeHtml(r.name)}</div>
+      <div class="lb-xp">${r.xp} XP</div>`;
+    list.appendChild(row);
+  });
+}
+document.getElementById('open-leaderboard-btn').addEventListener('click', ()=>{ renderLeaderboard(); openModal('leaderboard-modal'); });
+document.getElementById('open-settings-btn').addEventListener('click', ()=>{ openModal('settings-modal'); });
+document.getElementById('settings-edit-avatar-btn').addEventListener('click', ()=>{ closeModal('settings-modal'); openModal('avatar-modal'); });
+document.getElementById('settings-reset-btn').addEventListener('click', ()=>{
+  if(confirm('Xoá toàn bộ dữ liệu hồ sơ (tên, cấp bậc, vàng, bạn bè) trên trình duyệt này? Hành động này không thể hoàn tác.')){
+    localStorage.removeItem(STORE_KEY);
+    location.reload();
+  }
+});
+document.getElementById('lb-tab-friends').addEventListener('click', ()=>{
+  lbTab='friends';
+  document.getElementById('lb-tab-friends').classList.add('active');
+  document.getElementById('lb-tab-world').classList.remove('active');
+  renderLeaderboard();
+});
+document.getElementById('lb-tab-world').addEventListener('click', ()=>{
+  lbTab='world';
+  document.getElementById('lb-tab-world').classList.add('active');
+  document.getElementById('lb-tab-friends').classList.remove('active');
+  renderLeaderboard();
+});
+
+/* ============================================================
+   7. ÂM THANH: nhạc nền + hiệu ứng
+   ============================================================ */
+let audioCtx = null, sfxGain = null;
+let clickBuffer = null, clickBufferLoading = false;
+const CLICK_SOUND_B64 = "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";
+function loadClickSound(){
+  if(clickBuffer || clickBufferLoading || !audioCtx) return;
+  clickBufferLoading = true;
+  try{
+    const raw = atob(CLICK_SOUND_B64);
+    const arr = new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++) arr[i] = raw.charCodeAt(i);
+    audioCtx.decodeAudioData(arr.buffer, buf=>{ clickBuffer = buf; }, ()=>{ clickBufferLoading = false; });
+  }catch(e){ clickBufferLoading = false; }
+}
+function playBuffer(buffer, node, vol){
+  if(!audioCtx || !buffer || !node || vol<=0) return;
+  const src = audioCtx.createBufferSource();
+  src.buffer = buffer;
+  const g = audioCtx.createGain();
+  g.gain.value = vol;
+  src.connect(g); g.connect(node);
+  src.start();
+}
+function ensureAudioCtx(){
+  if(audioCtx) { if(audioCtx.state==='suspended') audioCtx.resume(); return; }
+  try{
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    sfxGain = audioCtx.createGain();
+    sfxGain.gain.value = 1;
+    sfxGain.connect(audioCtx.destination);
+    loadClickSound();
+  }catch(e){ audioCtx = null; }
+}
+function noteFreq(semi){ return 261.63 * Math.pow(2, semi/12); }
+
+function playTone(freq, dur, type, node, peakVol){
+  if(!audioCtx || !node || peakVol<=0) return;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type; osc.frequency.value = freq;
+  const now = audioCtx.currentTime;
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(peakVol, now+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+  osc.connect(g); g.connect(node);
+  osc.start(now); osc.stop(now+dur+0.03);
+}
+
+function playSfx(name){
+  if(!profile.sfxOn) return;
+  ensureAudioCtx();
+  if(!audioCtx) return;
+  const vol = (profile.sfxVol/100) * 0.32;
+  if(vol<=0) return;
+  switch(name){
+    case 'click':
+      if(clickBuffer) playBuffer(clickBuffer, sfxGain, vol*1.1);
+      else playTone(680,0.055,'square',sfxGain,vol*0.45);
+      break;
+    case 'coin':
+      playTone(880,0.09,'triangle',sfxGain,vol);
+      setTimeout(()=>playTone(1320,0.13,'triangle',sfxGain,vol*0.9), 70);
+      break;
+    case 'join':
+      playTone(520,0.08,'sine',sfxGain,vol*0.8);
+      setTimeout(()=>playTone(780,0.11,'sine',sfxGain,vol*0.8), 60);
+      break;
+    case 'leave':
+      playTone(620,0.08,'sine',sfxGain,vol*0.7);
+      setTimeout(()=>playTone(420,0.13,'sine',sfxGain,vol*0.7), 60);
+      break;
+    case 'error': playTone(180,0.18,'sawtooth',sfxGain,vol*0.55); break;
+    case 'notify': default: playTone(980,0.07,'sine',sfxGain,vol*0.7);
+  }
+}
+
+const MUSIC_TRACKS = [
+  'assets/audio_1.mp3',
+  'assets/audio_2.mp3'
+];
+let musicEl = null, musicIdx = 0;
+// Trước đây nhạc nền được nhúng base64 nên cần chuyển thành Blob URL để phát;
+// giờ nhạc đã là file .mp3 riêng trong thư mục assets/ nên dùng thẳng đường dẫn, không cần chuyển đổi nữa.
+function ensureMusicEl(){
+  if(musicEl) return;
+  musicEl = new Audio();
+  musicEl.src = MUSIC_TRACKS[musicIdx];
+  musicEl.volume = profile.musicVol/100;
+  musicEl.addEventListener('ended', ()=>{
+    musicIdx = (musicIdx+1) % MUSIC_TRACKS.length;
+    musicEl.src = MUSIC_TRACKS[musicIdx];
+    if(profile.musicOn) musicEl.play().catch(()=>{});
+  });
+  musicEl.addEventListener('error', ()=>{ console.error('Nhạc nền lỗi tải:', musicEl.error); });
+}
+function startMusicIfNeeded(){
+  ensureAudioCtx();
+  updateMusicGain();
+}
+function updateMusicGain(){
+  ensureMusicEl();
+  if(!musicEl) return;
+  musicEl.volume = profile.musicVol/100;
+  if(profile.musicOn){ musicEl.play().then(()=>{musicPlayConfirmed=true; hideMusicBanner();}).catch(err=>{console.error('Lỗi phát nhạc:', err);}); }
+  else { musicEl.pause(); }
+}
+
+// Khởi động AudioContext + nhạc nền: thử ở MỌI cú click cho tới khi phát thành công
+// (một số trình duyệt chặn lần thử đầu tiên nếu file nhạc còn đang chuyển sang blob URL)
+let musicPlayConfirmed = false;
+function hideMusicBanner(){
+  const b = document.getElementById('music-enable-banner');
+  if(b) b.style.display = 'none';
+}
+document.addEventListener('click', function tryStartMusic(){
+  if(musicPlayConfirmed || !profile.musicOn) return;
+  ensureAudioCtx();
+  ensureMusicEl();
+  const p = musicEl.play();
+  if(p && p.then){
+    p.then(()=>{ musicPlayConfirmed = true; hideMusicBanner(); }).catch(()=>{ /* thử lại ở cú click kế tiếp */ });
+  } else {
+    musicPlayConfirmed = true; hideMusicBanner();
+  }
+});
+
+// Hiệu ứng "tách" nhẹ cho MỌI nút bấm trong sảnh
+document.addEventListener('click', function(e){
+  if(e.target.closest('button')) playSfx('click');
+});
+
+/* ---- Cài đặt âm thanh trong modal Settings ---- */
+function renderAudioSettings(){
+  document.getElementById('music-toggle-btn').textContent = profile.musicOn ? '🎵' : '🔇';
+  document.getElementById('music-toggle-btn').classList.toggle('off', !profile.musicOn);
+  document.getElementById('music-vol-slider').value = profile.musicVol;
+  document.getElementById('music-vol-label').textContent = profile.musicVol+'%';
+  document.getElementById('sfx-toggle-btn').textContent = profile.sfxOn ? '🔊' : '🔈';
+  document.getElementById('sfx-toggle-btn').classList.toggle('off', !profile.sfxOn);
+  document.getElementById('sfx-vol-slider').value = profile.sfxVol;
+  document.getElementById('sfx-vol-label').textContent = profile.sfxVol+'%';
+}
+const _openSettingsBtn = document.getElementById('open-settings-btn');
+_openSettingsBtn.addEventListener('click', renderAudioSettings);
+
+document.getElementById('music-toggle-btn').addEventListener('click', ()=>{
+  profile.musicOn = !profile.musicOn; saveProfile(profile);
+  updateMusicGain(); renderAudioSettings();
+  if(profile.musicOn) startMusicIfNeeded();
+});
+document.getElementById('music-vol-slider').addEventListener('input', e=>{
+  profile.musicVol = parseInt(e.target.value,10); saveProfile(profile);
+  updateMusicGain(); document.getElementById('music-vol-label').textContent = profile.musicVol+'%';
+});
+document.getElementById('sfx-toggle-btn').addEventListener('click', ()=>{
+  profile.sfxOn = !profile.sfxOn; saveProfile(profile);
+  renderAudioSettings();
+  if(profile.sfxOn) playSfx('notify');
+});
+document.getElementById('sfx-vol-slider').addEventListener('input', e=>{
+  profile.sfxVol = parseInt(e.target.value,10); saveProfile(profile);
+  document.getElementById('sfx-vol-label').textContent = profile.sfxVol+'%';
+});
+document.getElementById('sfx-vol-slider').addEventListener('change', ()=>{ playSfx('notify'); });
+
+/* ============================================================
+   8. ĐĂNG NHẬP GOOGLE + ĐỒNG BỘ DỮ LIỆU (Firebase)
+   ============================================================
+   HƯỚNG DẪN: Dán cấu hình Firebase của cậu vào object bên dưới.
+   Lấy ở: Firebase Console → ⚙️ Project settings → cuộn xuống "Your apps" → Web app.
+   Nếu chưa điền, nút "Đăng nhập Google" vẫn hiện nhưng sẽ báo là chưa cấu hình.
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBuXjdu6dnHoKpQ1mswL5XEcovAwV3L_qs",
+  authDomain: "cotyphu-fdf4c.firebaseapp.com",
+  projectId: "cotyphu-fdf4c",
+  storageBucket: "cotyphu-fdf4c.firebasestorage.app",
+  messagingSenderId: "845929671710",
+  appId: "1:845929671710:web:ae7b9b171b6450d510520f"
+};
+
+let firebaseReady = false;
+let db = null;
+let currentUser = null;
+let guestMode = false;
+
+(function initFirebase(){
+  try{
+    const looksReal = firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('DÁN');
+    if(looksReal && window.firebase){
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      firebaseReady = true;
+      firebase.auth().onAuthStateChanged(user=>{
+        currentUser = user;
+        updateGoogleUI();
+        if(user){
+          loadCloudProfile(user.uid);
+          enterApp();
+        }
+      });
+    }
+  }catch(e){ firebaseReady = false; console.error('Firebase chưa sẵn sàng:', e); }
+})();
+
+function friendlyAuthError(err){
+  const code = err && err.code;
+  const map = {
+    'auth/email-already-in-use': 'Tên đăng nhập này đã có người dùng, chọn tên khác nhé.',
+    'auth/weak-password': 'Mật khẩu phải từ 6 ký tự trở lên.',
+    'auth/invalid-email': 'Tên đăng nhập chứa ký tự không hợp lệ (chỉ dùng chữ, số, dấu gạch dưới).',
+    'auth/user-not-found': 'Không tìm thấy tài khoản này.',
+    'auth/wrong-password': 'Sai mật khẩu.',
+    'auth/invalid-credential': 'Sai tên đăng nhập hoặc mật khẩu.',
+    'auth/unauthorized-domain': 'Domain này chưa được phép đăng nhập Google (cần host thật, không dùng được khi mở file trực tiếp).',
+    'auth/popup-closed-by-user': 'Bạn đã đóng cửa sổ đăng nhập Google.'
+  };
+  return map[code] || (err && (err.message || code)) || 'Có lỗi xảy ra, thử lại nhé.';
+}
+
+function enterApp(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-main').style.display = 'block';
+}
+
+/* ---- Các nút trên MÀN ĐĂNG NHẬP ---- */
+document.getElementById('login-guest-btn').addEventListener('click', ()=>{
+  guestMode = true;
+  enterApp();
+});
+
+document.getElementById('login-google-btn').addEventListener('click', ()=>{
+  const errEl = document.getElementById('login-err');
+  errEl.textContent = '';
+  if(!firebaseReady){ errEl.textContent = '⚠️ Chưa cấu hình Firebase — bấm "Khách" để chơi trước nhé.'; return; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).catch(err=>{ errEl.textContent = friendlyAuthError(err); });
+});
+
+function updateGoogleUI(){
+  const btn = document.getElementById('google-login-btn');
+  const status = document.getElementById('google-account-status');
+  if(currentUser){
+    btn.style.display = 'none';
+    status.style.display = 'inline';
+    status.textContent = '🟢 '+(currentUser.displayName || currentUser.email.replace('@ctp.local',''))+' · ';
+    if(!document.getElementById('google-logout-btn')){
+      const out = document.createElement('button');
+      out.id = 'google-logout-btn';
+      out.textContent = 'Đăng xuất';
+      out.style.cssText = 'background:none;border:none;color:#ff9a9a;font-size:10.5px;font-weight:800;cursor:pointer;text-decoration:underline;padding:0;';
+      out.addEventListener('click', ()=>{ firebase.auth().signOut(); location.reload(); });
+      status.appendChild(out);
+    }
+  } else {
+    btn.style.display = 'flex';
+    status.style.display = 'none';
+  }
+}
+
+function loadCloudProfile(uid){
+  if(!db) return;
+  db.collection('players').doc(uid).get().then(doc=>{
+    if(doc.exists){
+      const cloud = doc.data();
+      profile = Object.assign({}, profile, cloud);
+      localStorage.setItem(STORE_KEY, JSON.stringify(profile));
+      renderProfileBar(); renderAudioSettings();
+      showToast('☁️ Đã tải dữ liệu tài khoản của bạn!', 'notify');
+    } else {
+      db.collection('players').doc(uid).set(profile).catch(()=>{});
+    }
+  }).catch(err=>{
+    console.error('Lỗi tải dữ liệu Firestore:', err);
+    showToast('❌ Không tải được dữ liệu tài khoản: '+(err.code||err.message), 'error');
+  });
+}
+
+function syncProfileToCloud(p){
+  if (
+    typeof firebaseReady === "undefined" ||
+    !firebaseReady ||
+    !db ||
+    !currentUser
+) {
+    return;
+}
+  db.collection('players').doc(currentUser.uid).set(p, {merge:true}).catch(err=>{
+    console.error('Lỗi đồng bộ Firestore:', err);
+  });
+}
+
+document.getElementById('google-login-btn').addEventListener('click', ()=>{
+  if(!firebaseReady){
+    showToast('⚠️ Chưa cấu hình Firebase — xem hướng dẫn trong code (mục 8) hoặc hỏi lại nhé.', 'error');
+    return;
+  }
+  if(guestMode && !confirm('Nếu tài khoản Google này đã có dữ liệu trên đám mây, dữ liệu Khách hiện tại (vàng/cấp bậc) trên máy này sẽ bị THAY THẾ, không cộng dồn. Bạn có chắc muốn tiếp tục?')){
+    return;
+  }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).catch(err=>{
+    console.error('Lỗi đăng nhập Google:', err);
+    showToast('❌ '+friendlyAuthError(err), 'error');
+  });
+});
+
+})();
+</script>
+</body>
+</html>
