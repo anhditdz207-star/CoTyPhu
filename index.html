@@ -412,7 +412,7 @@
         <h3>Người chơi trong phòng</h3>
         <div id="player-list"></div>
       </div>
-      <div class="chat-panel">
+      <div class="chat-panel" id="chat-panel">
         <div class="chat-msgs" id="chat-msgs"></div>
         <div class="chat-input-row">
           <input id="chat-input" placeholder="Nhắn gì đó..." maxlength="200" />
@@ -493,6 +493,17 @@
 </div>
 
 <!-- ================= FRIENDS MODAL ================= -->
+<div class="overlay hidden" id="chat-modal">
+  <div class="modal-card" style="position:relative;">
+    <button class="close-x" id="chat-modal-close">✕</button>
+    <h2>💬 Trò chuyện</h2>
+    <div id="chat-modal-empty" style="display:none;padding:20px 0;text-align:center;color:#8a6d3b;">
+      Vào phòng cùng bạn bè trước đã, rồi chat được ngay trong phòng nhé!
+    </div>
+    <div id="chat-modal-slot"></div>
+  </div>
+</div>
+
 <div class="overlay hidden" id="friends-modal">
   <div class="modal-card" style="position:relative;">
     <button class="close-x" data-close="friends-modal">✕</button>
@@ -1237,15 +1248,26 @@ function renderFriends(){
   });
 }
 document.getElementById('open-friends-btn').addEventListener('click', ()=>{ renderFriends(); openModal('friends-modal'); });
+const chatPanelHomeParent = document.querySelector('.lobby-body');
+const chatPanelEl = document.getElementById('chat-panel');
+const chatPanelNextSibling = chatPanelEl.nextSibling;
 document.getElementById('open-chat-btn').addEventListener('click', ()=>{
-  if(!document.getElementById('lobby-wrap').classList.contains('hidden')){
-    document.querySelector('.chat-panel').scrollIntoView({behavior:'smooth', block:'center'});
+  const inRoom = !document.getElementById('lobby-wrap').classList.contains('hidden');
+  document.getElementById('chat-modal-empty').style.display = inRoom ? 'none' : 'block';
+  if(inRoom){
+    document.getElementById('chat-modal-slot').appendChild(chatPanelEl);
+    openModal('chat-modal');
     document.getElementById('chat-input').focus();
   } else {
-    showToast('Vào phòng cùng bạn bè trước đã, rồi chat được ngay trong phòng nhé!');
-    renderFriends(); openModal('friends-modal');
+    openModal('chat-modal');
   }
 });
+function closeChatModal(){
+  chatPanelHomeParent.insertBefore(chatPanelEl, chatPanelNextSibling);
+  closeModal('chat-modal');
+}
+document.getElementById('chat-modal-close').addEventListener('click', closeChatModal);
+document.getElementById('chat-modal').addEventListener('click', e=>{ if(e.target.id==='chat-modal') closeChatModal(); });
 document.getElementById('add-friend-btn').addEventListener('click', ()=>{
   const pid = document.getElementById('add-friend-pid').value.trim().toUpperCase();
   const nick = document.getElementById('add-friend-name').value.trim();
