@@ -1237,6 +1237,15 @@ function renderFriends(){
   });
 }
 document.getElementById('open-friends-btn').addEventListener('click', ()=>{ renderFriends(); openModal('friends-modal'); });
+document.getElementById('open-chat-btn').addEventListener('click', ()=>{
+  if(!document.getElementById('lobby-wrap').classList.contains('hidden')){
+    document.querySelector('.chat-panel').scrollIntoView({behavior:'smooth', block:'center'});
+    document.getElementById('chat-input').focus();
+  } else {
+    showToast('Vào phòng cùng bạn bè trước đã, rồi chat được ngay trong phòng nhé!');
+    renderFriends(); openModal('friends-modal');
+  }
+});
 document.getElementById('add-friend-btn').addEventListener('click', ()=>{
   const pid = document.getElementById('add-friend-pid').value.trim().toUpperCase();
   const nick = document.getElementById('add-friend-name').value.trim();
