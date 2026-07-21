@@ -494,15 +494,27 @@
 
 <!-- ================= FRIENDS MODAL ================= -->
 <div class="overlay hidden" id="chat-modal">
-  <div class="modal-card" style="position:relative;">
+  <div class="modal-card" style="position:relative;max-width:560px;">
     <button class="close-x" id="chat-modal-close">✕</button>
     <h2>💬 Trò chuyện</h2>
     <div id="chat-modal-empty" style="display:none;padding:20px 0;text-align:center;color:#8a6d3b;">
       Vào phòng cùng bạn bè trước đã, rồi chat được ngay trong phòng nhé!
     </div>
-    <div id="chat-modal-slot"></div>
+    <div id="chat-modal-body" style="display:none;gap:10px;">
+      <div id="dm-list" style="width:130px;flex:0 0 130px;overflow-y:auto;max-height:360px;"></div>
+      <div id="dm-thread-wrap" style="flex:1;display:flex;flex-direction:column;min-width:0;">
+        <div id="dm-thread-title" style="font-weight:800;margin-bottom:6px;color:#5a3d10;"></div>
+        <div id="chat-modal-slot" style="flex:1;"></div>
+      </div>
+    </div>
   </div>
 </div>
+<style>
+  #chat-modal-body{display:flex;}
+  #dm-list .dm-item{padding:8px 8px;border-radius:8px;cursor:pointer;font-size:12.5px;margin-bottom:4px;color:#5a3d10;}
+  #dm-list .dm-item.active{background:#e8a622;color:#3a2400;font-weight:800;}
+  #dm-list .dm-item .badge{background:#e05a3d;color:#fff;border-radius:999px;padding:0 6px;font-size:10px;margin-left:4px;}
+</style>
 
 <div class="overlay hidden" id="friends-modal">
   <div class="modal-card" style="position:relative;">
@@ -857,13 +869,36 @@ function updateSpeakingUI(id, speaking){
   if(row) row.classList.toggle('speaking', !!speaking);
 }
 
-function addChatMsg(name, text, sys){
+let roomMsgs = [], dmThreads = {}, dmUnread = {}, activeThread = 'room';
+function renderMsgList(list){
   const box = document.getElementById('chat-msgs');
-  const d = document.createElement('div');
-  d.className = 'chat-msg'+(sys?' sys':'');
-  d.innerHTML = sys ? text : ('<b>'+escapeHtml(name)+':</b> '+escapeHtml(text));
-  box.appendChild(d);
+  box.innerHTML = list.map(m=> m.sys ? `<div class="chat-msg sys">${m.text}</div>` : `<div class="chat-msg"><b>${escapeHtml(m.name)}:</b> ${escapeHtml(m.text)}</div>`).join('');
   box.scrollTop = box.scrollHeight;
+}
+function renderDMList(){
+  const box = document.getElementById('dm-list');
+  if(!box) return;
+  const others = Object.keys(roster).filter(id=>id!==myId);
+  let html = `<div class="dm-item ${activeThread==='room'?'active':''}" data-id="room">💬 Cả phòng</div>`;
+  others.forEach(id=>{
+    const r = roster[id]||{};
+    const badge = dmUnread[id] ? `<span class="badge">${dmUnread[id]}</span>` : '';
+    html += `<div class="dm-item ${activeThread===id?'active':''}" data-id="${id}">${r.emoji||'🙂'} ${escapeHtml(r.name||'Người chơi')}${badge}</div>`;
+  });
+  box.innerHTML = html;
+  box.querySelectorAll('.dm-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      activeThread = el.dataset.id;
+      dmUnread[activeThread] = 0;
+      document.getElementById('dm-thread-title').textContent = activeThread==='room' ? 'Cả phòng' : ((roster[activeThread]||{}).name||'');
+      renderMsgList(activeThread==='room' ? roomMsgs : (dmThreads[activeThread]||[]));
+      renderDMList();
+    });
+  });
+}
+function addChatMsg(name, text, sys){
+  roomMsgs.push({name, text, sys});
+  if(activeThread==='room') renderMsgList(roomMsgs);
 }
 function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -1014,6 +1049,11 @@ function handleData(fromId, data){
     renderPlayers();
   } else if(data.t==='chat'){
     addChatMsg(data.name, data.text, false);
+  } else if(data.t==='dm'){
+    if(!dmThreads[fromId]) dmThreads[fromId] = [];
+    dmThreads[fromId].push({name:data.name, text:data.text});
+    if(activeThread===fromId){ renderMsgList(dmThreads[fromId]); }
+    else { dmUnread[fromId] = (dmUnread[fromId]||0)+1; renderDMList(); showToast('💬 Tin nhắn riêng từ '+data.name); }
   } else if(data.t==='mic'){
     if(roster[fromId]){ roster[fromId].muted = data.muted; renderPlayers(); }
   } else if(data.t==='gamestart'){
@@ -1155,8 +1195,16 @@ function sendChat(){
   const inp = document.getElementById('chat-input');
   const text = inp.value.trim();
   if(!text) return;
-  addChatMsg(profile.name, text, false);
-  broadcastAll({t:'chat', name:profile.name, text});
+  if(activeThread==='room'){
+    addChatMsg(profile.name, text, false);
+    broadcastAll({t:'chat', name:profile.name, text});
+  } else {
+    if(!dmThreads[activeThread]) dmThreads[activeThread] = [];
+    dmThreads[activeThread].push({name:profile.name, text});
+    renderMsgList(dmThreads[activeThread]);
+    const c = dataConns[activeThread];
+    if(c && c.open) c.send({t:'dm', name:profile.name, text});
+  }
   inp.value = '';
 }
 document.getElementById('mic-toggle-btn').addEventListener('click', ()=>{
@@ -1254,8 +1302,13 @@ const chatPanelNextSibling = chatPanelEl.nextSibling;
 document.getElementById('open-chat-btn').addEventListener('click', ()=>{
   const inRoom = !document.getElementById('lobby-wrap').classList.contains('hidden');
   document.getElementById('chat-modal-empty').style.display = inRoom ? 'none' : 'block';
+  document.getElementById('chat-modal-body').style.display = inRoom ? 'flex' : 'none';
   if(inRoom){
     document.getElementById('chat-modal-slot').appendChild(chatPanelEl);
+    activeThread = 'room';
+    document.getElementById('dm-thread-title').textContent = 'Cả phòng';
+    renderMsgList(roomMsgs);
+    renderDMList();
     openModal('chat-modal');
     document.getElementById('chat-input').focus();
   } else {
