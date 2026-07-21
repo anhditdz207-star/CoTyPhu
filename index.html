@@ -669,6 +669,7 @@ function renderProfileBar(){
   document.getElementById('xp-label').textContent = next ? (profile.xp+' / '+next.min+' XP') : (profile.xp+' XP (Cao nhất)');
 }
 renderProfileBar();
+initDMPeer();
 
 document.getElementById('name-input').addEventListener('change', e=>{
   const v = e.target.value.trim() || 'Người chơi';
@@ -870,6 +871,37 @@ function updateSpeakingUI(id, speaking){
 }
 
 let roomMsgs = [], dmThreads = {}, dmUnread = {}, activeThread = 'room';
+let dmPeer = null, dmConns = {};
+function initDMPeer(){
+  if(typeof Peer === 'undefined') return;
+  try{
+    dmPeer = new Peer(profile.pid);
+    dmPeer.on('connection', conn=>{
+      dmConns[conn.peer] = conn;
+      conn.on('data', data=>{ if(data.t==='dm') handleIncomingDM(conn.peer, data.name, data.text); });
+      conn.on('close', ()=>{ delete dmConns[conn.peer]; });
+    });
+    dmPeer.on('error', ()=>{}); // ID có thể đang bận ở tab/máy khác — bỏ qua, không chặn dùng app
+  }catch(e){}
+}
+function ensureDMConn(pid, cb){
+  const existing = dmConns[pid];
+  if(existing && existing.open){ cb(existing); return; }
+  if(!dmPeer){ cb(null); return; }
+  const conn = dmPeer.connect(pid);
+  let done = false;
+  conn.on('open', ()=>{ dmConns[pid]=conn; done=true; cb(conn); });
+  conn.on('data', data=>{ if(data.t==='dm') handleIncomingDM(pid, data.name, data.text); });
+  conn.on('close', ()=>{ delete dmConns[pid]; });
+  conn.on('error', ()=>{ if(!done){ done=true; cb(null); } });
+  setTimeout(()=>{ if(!done){ done=true; cb(null); } }, 5000);
+}
+function handleIncomingDM(fromId, name, text){
+  if(!dmThreads[fromId]) dmThreads[fromId] = [];
+  dmThreads[fromId].push({name, text});
+  if(activeThread===fromId){ renderMsgList(dmThreads[fromId]); }
+  else { dmUnread[fromId] = (dmUnread[fromId]||0)+1; renderDMList(); showToast('💬 Tin nhắn riêng từ '+name); }
+}
 function renderMsgList(list){
   const box = document.getElementById('chat-msgs');
   box.innerHTML = list.map(m=> m.sys ? `<div class="chat-msg sys">${m.text}</div>` : `<div class="chat-msg"><b>${escapeHtml(m.name)}:</b> ${escapeHtml(m.text)}</div>`).join('');
@@ -878,19 +910,20 @@ function renderMsgList(list){
 function renderDMList(){
   const box = document.getElementById('dm-list');
   if(!box) return;
-  const others = Object.keys(roster).filter(id=>id!==myId);
-  let html = `<div class="dm-item ${activeThread==='room'?'active':''}" data-id="room">💬 Cả phòng</div>`;
-  others.forEach(id=>{
-    const r = roster[id]||{};
-    const badge = dmUnread[id] ? `<span class="badge">${dmUnread[id]}</span>` : '';
-    html += `<div class="dm-item ${activeThread===id?'active':''}" data-id="${id}">${r.emoji||'🙂'} ${escapeHtml(r.name||'Người chơi')}${badge}</div>`;
+  const inRoom = !document.getElementById('lobby-wrap').classList.contains('hidden');
+  let html = inRoom ? `<div class="dm-item ${activeThread==='room'?'active':''}" data-id="room">💬 Cả phòng</div>` : '';
+  (profile.friends||[]).forEach(f=>{
+    const badge = dmUnread[f.pid] ? `<span class="badge">${dmUnread[f.pid]}</span>` : '';
+    html += `<div class="dm-item ${activeThread===f.pid?'active':''}" data-id="${f.pid}">${f.emoji||'🙂'} ${escapeHtml(f.name||'Bạn')}${badge}</div>`;
   });
+  if(!inRoom && !(profile.friends||[]).length) html = '<div style="font-size:12px;color:#8a6d3b;padding:6px;">Kết bạn trước để chat riêng nhé!</div>';
   box.innerHTML = html;
   box.querySelectorAll('.dm-item').forEach(el=>{
     el.addEventListener('click', ()=>{
       activeThread = el.dataset.id;
       dmUnread[activeThread] = 0;
-      document.getElementById('dm-thread-title').textContent = activeThread==='room' ? 'Cả phòng' : ((roster[activeThread]||{}).name||'');
+      const f = (profile.friends||[]).find(x=>x.pid===activeThread);
+      document.getElementById('dm-thread-title').textContent = activeThread==='room' ? 'Cả phòng' : (f?f.name:'');
       renderMsgList(activeThread==='room' ? roomMsgs : (dmThreads[activeThread]||[]));
       renderDMList();
     });
@@ -1049,11 +1082,6 @@ function handleData(fromId, data){
     renderPlayers();
   } else if(data.t==='chat'){
     addChatMsg(data.name, data.text, false);
-  } else if(data.t==='dm'){
-    if(!dmThreads[fromId]) dmThreads[fromId] = [];
-    dmThreads[fromId].push({name:data.name, text:data.text});
-    if(activeThread===fromId){ renderMsgList(dmThreads[fromId]); }
-    else { dmUnread[fromId] = (dmUnread[fromId]||0)+1; renderDMList(); showToast('💬 Tin nhắn riêng từ '+data.name); }
   } else if(data.t==='mic'){
     if(roster[fromId]){ roster[fromId].muted = data.muted; renderPlayers(); }
   } else if(data.t==='gamestart'){
@@ -1202,8 +1230,10 @@ function sendChat(){
     if(!dmThreads[activeThread]) dmThreads[activeThread] = [];
     dmThreads[activeThread].push({name:profile.name, text});
     renderMsgList(dmThreads[activeThread]);
-    const c = dataConns[activeThread];
-    if(c && c.open) c.send({t:'dm', name:profile.name, text});
+    ensureDMConn(activeThread, conn=>{
+      if(conn && conn.open) conn.send({t:'dm', name:profile.name, text});
+      else showToast('Bạn này hiện không online, thử lại sau nhé.', 'error');
+    });
   }
   inp.value = '';
 }
@@ -1296,27 +1326,25 @@ function renderFriends(){
   });
 }
 document.getElementById('open-friends-btn').addEventListener('click', ()=>{ renderFriends(); openModal('friends-modal'); });
-const chatPanelHomeParent = document.querySelector('.lobby-body');
-const chatPanelEl = document.getElementById('chat-panel');
-const chatPanelNextSibling = chatPanelEl.nextSibling;
 document.getElementById('open-chat-btn').addEventListener('click', ()=>{
   const inRoom = !document.getElementById('lobby-wrap').classList.contains('hidden');
-  document.getElementById('chat-modal-empty').style.display = inRoom ? 'none' : 'block';
-  document.getElementById('chat-modal-body').style.display = inRoom ? 'flex' : 'none';
-  if(inRoom){
-    document.getElementById('chat-modal-slot').appendChild(chatPanelEl);
-    activeThread = 'room';
-    document.getElementById('dm-thread-title').textContent = 'Cả phòng';
-    renderMsgList(roomMsgs);
-    renderDMList();
-    openModal('chat-modal');
-    document.getElementById('chat-input').focus();
-  } else {
-    openModal('chat-modal');
-  }
+  const hasFriends = (profile.friends||[]).length>0;
+  document.getElementById('chat-modal-empty').style.display = (inRoom||hasFriends) ? 'none' : 'block';
+  document.getElementById('chat-modal-body').style.display = (inRoom||hasFriends) ? 'flex' : 'none';
+  const slot = document.getElementById('chat-modal-slot');
+  const panel = document.getElementById('chat-panel');
+  if(panel && slot && panel.parentElement!==slot) slot.appendChild(panel);
+  activeThread = inRoom ? 'room' : 'room'; // mặc định vào chat chung nếu có phòng, ds bạn bè vẫn luôn hiện để chọn
+  document.getElementById('dm-thread-title').textContent = inRoom ? 'Cả phòng' : 'Chọn 1 người bạn để chat riêng';
+  renderMsgList(roomMsgs);
+  renderDMList();
+  openModal('chat-modal');
+  if(inRoom||hasFriends) document.getElementById('chat-input').focus();
 });
 function closeChatModal(){
-  chatPanelHomeParent.insertBefore(chatPanelEl, chatPanelNextSibling);
+  const panel = document.getElementById('chat-panel');
+  const home = document.querySelector('.lobby-body');
+  if(panel && home && panel.parentElement!==home) home.appendChild(panel);
   closeModal('chat-modal');
 }
 document.getElementById('chat-modal-close').addEventListener('click', closeChatModal);
