@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sảnh Chờ - Cờ Tỷ Phú 3D</title>
-<link rel="icon" href="assets/LOGOWED.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -75,16 +74,15 @@
     z-index:3;
   }
   .profile-mid{flex:1;min-width:0;}
-  .name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0;}
+  .name-row{display:flex;align-items:center;gap:8px;}
   #name-input{
     background:transparent;border:none;border-bottom:2px dashed rgba(255,255,255,.4);color:#fff;
-    font-family:'Baloo 2',sans-serif;font-weight:700;font-size:18px;padding:2px 2px;
-    max-width:220px;width:100%;min-width:60px;flex:1 1 auto;
+    font-family:'Baloo 2',sans-serif;font-weight:700;font-size:18px;padding:2px 2px;max-width:220px;
   }
   #name-input:focus{outline:none;border-bottom-color:var(--gold-2);}
   .tier-chip{
     font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;color:#3a2400;letter-spacing:.3px;
-    box-shadow:0 2px 6px rgba(0,0,0,.3);flex:0 0 auto;white-space:nowrap;
+    box-shadow:0 2px 6px rgba(0,0,0,.3);
   }
   .xp-bar-wrap{margin-top:6px;height:9px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden;
     width:100%;max-width:280px;box-shadow:0 0 0 1px rgba(180,140,255,.3) inset;}
@@ -257,6 +255,9 @@
   .mic-toggle{display:flex;align-items:center;gap:8px;background:#fff;border:2px solid #ecdfb8;border-radius:999px;
     padding:9px 16px;cursor:pointer;font-weight:800;font-size:13px;color:#3a2b16;}
   .mic-toggle.muted{background:#f5dede;border-color:#e0a9a9;color:#8a2020;}
+  .claim-btn{background:linear-gradient(180deg,#7ed0e8,#3aa0c9);color:#04303f;border:none;font-weight:800;
+    padding:9px 16px;border-radius:999px;cursor:pointer;font-size:12.5px;}
+  .claim-btn:disabled{filter:grayscale(.6);cursor:not-allowed;}
   .start-btn{margin-left:auto;background:linear-gradient(180deg,#7ed08a,#2fa84f);color:#fff;border:none;font-weight:800;
     padding:11px 22px;border-radius:999px;cursor:pointer;font-size:14px;box-shadow:0 6px 14px rgba(0,0,0,.3);}
   .hint-note{font-size:11.5px;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
@@ -269,17 +270,6 @@
     animation:joinPulse 1.4s ease-in-out infinite;
   }
   #join-game-banner.show{display:flex;}
-  #matchmaking-overlay{
-    display:none; position:fixed; inset:0; z-index:998; background:rgba(20,15,10,.82);
-    align-items:center; justify-content:center;
-  }
-  #matchmaking-overlay.show{display:flex;}
-  .mm-box{background:var(--cream-2,#fbf3de); border:4px solid #c9a24a; border-radius:20px;
-    padding:32px 40px; text-align:center; min-width:260px;}
-  .mm-spinner{font-size:40px; animation:mmSpin 1.6s linear infinite;}
-  @keyframes mmSpin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-  .mm-text{margin-top:10px; font-weight:800; font-size:16px; color:#7a2e1f;}
-  .mm-countdown{margin-top:14px; font-size:52px; font-weight:900; color:#e8a622;}
   #join-game-btn{
     background:#2fa84f;color:#fff;border:none;padding:10px 18px;border-radius:999px;
     font-weight:800;font-size:14px;cursor:pointer;
@@ -412,7 +402,7 @@
         <h3>Người chơi trong phòng</h3>
         <div id="player-list"></div>
       </div>
-      <div class="chat-panel" id="chat-panel">
+      <div class="chat-panel">
         <div class="chat-msgs" id="chat-msgs"></div>
         <div class="chat-input-row">
           <input id="chat-input" placeholder="Nhắn gì đó..." maxlength="200" />
@@ -421,8 +411,14 @@
       </div>
     </div>
 
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 4px;">
+      <span style="font-size:13px;">💰 Tiền khởi điểm</span>
+      <input type="range" id="cash-slider" min="200" max="1500" step="50" value="1500" style="flex:1;">
+      <span id="cash-slider-label" style="font-size:12px;font-weight:700;width:44px;text-align:right;">$1500</span>
+    </div>
     <div class="lobby-controls">
       <button class="mic-toggle" id="mic-toggle-btn">🎙️ Mic: Bật</button>
+      <button class="claim-btn" id="claim-btn">🏆 Ghi nhận ván vừa chơi</button>
       <button class="start-btn" id="start-game-btn">▶️ Bắt đầu ván chơi</button>
     </div>
     <div class="hint-note" id="lobby-hint">Đang kết nối...</div>
@@ -431,15 +427,6 @@
   <div id="join-game-banner">
     🎮 Chủ phòng đã bắt đầu ván chơi!
     <button id="join-game-btn">Vào game ngay ▶️</button>
-  </div>
-
-  <div id="matchmaking-overlay">
-    <div class="mm-box">
-      <div class="mm-spinner">🔎</div>
-      <div class="mm-text" id="mm-text">Đang tìm người chơi... (1/4)</div>
-      <div class="mm-countdown" id="mm-countdown" style="display:none;"></div>
-      <button id="mm-cancel-btn" style="margin-top:14px;background:#5a3d10;color:#fff;border:none;padding:8px 20px;border-radius:999px;cursor:pointer;font-weight:800;">Huỷ</button>
-    </div>
   </div>
 
 </div>
@@ -494,29 +481,6 @@
 </div>
 
 <!-- ================= FRIENDS MODAL ================= -->
-<div class="overlay hidden" id="chat-modal">
-  <div class="modal-card" style="position:relative;max-width:560px;">
-    <button class="close-x" id="chat-modal-close">✕</button>
-    <h2>💬 Trò chuyện</h2>
-    <div id="chat-modal-empty" style="display:none;padding:20px 0;text-align:center;color:#8a6d3b;">
-      Vào phòng cùng bạn bè trước đã, rồi chat được ngay trong phòng nhé!
-    </div>
-    <div id="chat-modal-body" style="display:none;gap:10px;">
-      <div id="dm-list" style="width:130px;flex:0 0 130px;overflow-y:auto;max-height:360px;"></div>
-      <div id="dm-thread-wrap" style="flex:1;display:flex;flex-direction:column;min-width:0;">
-        <div id="dm-thread-title" style="font-weight:800;margin-bottom:6px;color:#5a3d10;"></div>
-        <div id="chat-modal-slot" style="flex:1;"></div>
-      </div>
-    </div>
-  </div>
-</div>
-<style>
-  #chat-modal-body{display:flex;}
-  #dm-list .dm-item{padding:8px 8px;border-radius:8px;cursor:pointer;font-size:12.5px;margin-bottom:4px;color:#5a3d10;}
-  #dm-list .dm-item.active{background:#e8a622;color:#3a2400;font-weight:800;}
-  #dm-list .dm-item .badge{background:#e05a3d;color:#fff;border-radius:999px;padding:0 6px;font-size:10px;margin-left:4px;}
-</style>
-
 <div class="overlay hidden" id="friends-modal">
   <div class="modal-card" style="position:relative;">
     <button class="close-x" data-close="friends-modal">✕</button>
@@ -670,7 +634,6 @@ function renderProfileBar(){
   document.getElementById('xp-label').textContent = next ? (profile.xp+' / '+next.min+' XP') : (profile.xp+' XP (Cao nhất)');
 }
 renderProfileBar();
-initDMPeer();
 
 document.getElementById('name-input').addEventListener('change', e=>{
   const v = e.target.value.trim() || 'Người chơi';
@@ -797,7 +760,7 @@ document.getElementById('open-shop-btn').addEventListener('click', ()=>{ renderS
    3. CHƠI VỚI MÁY -> mở thẳng file cờ
    ============================================================ */
 document.getElementById('mode-bot').addEventListener('click', ()=>{
-  window.location.href = 'CTPbot.html';
+  window.location.href = 'co-ty-phu-3d.html';
 });
 
 /* ============================================================
@@ -828,8 +791,6 @@ function resetRoomState(){
   if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
   if(peer){ try{peer.destroy();}catch(e){} peer=null; }
   myId=null; isHost=false; roomCode=''; isPublicRoom=false;
-  netStartedLobby=false; mmCountdownStarted=false;
-  document.getElementById('matchmaking-overlay').classList.remove('show');
 }
 
 async function getMic(){
@@ -871,68 +832,13 @@ function updateSpeakingUI(id, speaking){
   if(row) row.classList.toggle('speaking', !!speaking);
 }
 
-let roomMsgs = [], dmThreads = {}, dmUnread = {}, activeThread = 'room';
-let dmPeer = null, dmConns = {};
-function initDMPeer(){
-  if(typeof Peer === 'undefined') return;
-  try{
-    dmPeer = new Peer(profile.pid);
-    dmPeer.on('connection', conn=>{
-      dmConns[conn.peer] = conn;
-      conn.on('data', data=>{ if(data.t==='dm') handleIncomingDM(conn.peer, data.name, data.text); });
-      conn.on('close', ()=>{ delete dmConns[conn.peer]; });
-    });
-    dmPeer.on('error', ()=>{}); // ID có thể đang bận ở tab/máy khác — bỏ qua, không chặn dùng app
-  }catch(e){}
-}
-function ensureDMConn(pid, cb){
-  const existing = dmConns[pid];
-  if(existing && existing.open){ cb(existing); return; }
-  if(!dmPeer){ cb(null); return; }
-  const conn = dmPeer.connect(pid);
-  let done = false;
-  conn.on('open', ()=>{ dmConns[pid]=conn; done=true; cb(conn); });
-  conn.on('data', data=>{ if(data.t==='dm') handleIncomingDM(pid, data.name, data.text); });
-  conn.on('close', ()=>{ delete dmConns[pid]; });
-  conn.on('error', ()=>{ if(!done){ done=true; cb(null); } });
-  setTimeout(()=>{ if(!done){ done=true; cb(null); } }, 5000);
-}
-function handleIncomingDM(fromId, name, text){
-  if(!dmThreads[fromId]) dmThreads[fromId] = [];
-  dmThreads[fromId].push({name, text});
-  if(activeThread===fromId){ renderMsgList(dmThreads[fromId]); }
-  else { dmUnread[fromId] = (dmUnread[fromId]||0)+1; renderDMList(); showToast('💬 Tin nhắn riêng từ '+name); }
-}
-function renderMsgList(list){
-  const box = document.getElementById('chat-msgs');
-  box.innerHTML = list.map(m=> m.sys ? `<div class="chat-msg sys">${m.text}</div>` : `<div class="chat-msg"><b>${escapeHtml(m.name)}:</b> ${escapeHtml(m.text)}</div>`).join('');
-  box.scrollTop = box.scrollHeight;
-}
-function renderDMList(){
-  const box = document.getElementById('dm-list');
-  if(!box) return;
-  const inRoom = !document.getElementById('lobby-wrap').classList.contains('hidden');
-  let html = inRoom ? `<div class="dm-item ${activeThread==='room'?'active':''}" data-id="room">💬 Cả phòng</div>` : '';
-  (profile.friends||[]).forEach(f=>{
-    const badge = dmUnread[f.pid] ? `<span class="badge">${dmUnread[f.pid]}</span>` : '';
-    html += `<div class="dm-item ${activeThread===f.pid?'active':''}" data-id="${f.pid}">${f.emoji||'🙂'} ${escapeHtml(f.name||'Bạn')}${badge}</div>`;
-  });
-  if(!inRoom && !(profile.friends||[]).length) html = '<div style="font-size:12px;color:#8a6d3b;padding:6px;">Kết bạn trước để chat riêng nhé!</div>';
-  box.innerHTML = html;
-  box.querySelectorAll('.dm-item').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      activeThread = el.dataset.id;
-      dmUnread[activeThread] = 0;
-      const f = (profile.friends||[]).find(x=>x.pid===activeThread);
-      document.getElementById('dm-thread-title').textContent = activeThread==='room' ? 'Cả phòng' : (f?f.name:'');
-      renderMsgList(activeThread==='room' ? roomMsgs : (dmThreads[activeThread]||[]));
-      renderDMList();
-    });
-  });
-}
 function addChatMsg(name, text, sys){
-  roomMsgs.push({name, text, sys});
-  if(activeThread==='room') renderMsgList(roomMsgs);
+  const box = document.getElementById('chat-msgs');
+  const d = document.createElement('div');
+  d.className = 'chat-msg'+(sys?' sys':'');
+  d.innerHTML = sys ? text : ('<b>'+escapeHtml(name)+':</b> '+escapeHtml(text));
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
 }
 function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -972,47 +878,6 @@ function renderPlayers(){
       renderPlayers();
     });
   });
-  updateMatchmakingUI();
-}
-let mmCountdownStarted = false;
-function updateMatchmakingUI(){
-  const overlay = document.getElementById('matchmaking-overlay');
-  if(!isPublicRoom || netStartedLobby){ overlay.classList.remove('show'); return; }
-  const count = Object.keys(roster).length;
-  overlay.classList.add('show');
-  document.getElementById('mm-text').textContent = 'Đang tìm người chơi... ('+count+'/4)';
-  if(count>=4 && isHost && !mmCountdownStarted){
-    mmCountdownStarted = true;
-    broadcastAll({t:'matchCountdown'});
-    runMatchCountdown(()=>{
-      document.getElementById('start-game-btn').click();
-    });
-  }
-}
-let netStartedLobby = false;
-function runMatchCountdown(onDone){
-  const overlay = document.getElementById('matchmaking-overlay');
-  overlay.classList.add('show');
-  document.querySelector('.mm-spinner').style.display = 'none';
-  document.getElementById('mm-text').textContent = 'Đủ người rồi! Chuẩn bị vào trận...';
-  const cd = document.getElementById('mm-countdown');
-  cd.style.display = 'block';
-  const steps = ['3','2','1','BẮT ĐẦU!'];
-  let i = 0;
-  function tick(){
-    cd.textContent = steps[i];
-    playTone(i<3 ? 520+i*120 : 900, i<3?0.15:0.3, i<3?'sine':'triangle', sfxGain, 0.9);
-    i++;
-    if(i<steps.length) setTimeout(tick, 700);
-    else setTimeout(()=>{
-      overlay.classList.remove('show');
-      document.querySelector('.mm-spinner').style.display = '';
-      cd.style.display = 'none';
-      mmCountdownStarted = false;
-      onDone && onDone();
-    }, 700);
-  }
-  tick();
 }
 
 function broadcastAll(obj){
@@ -1040,14 +905,7 @@ function helloPayload(){
 
 function setupDataConn(conn){
   dataConns[conn.peer] = conn;
-  conn.on('open', ()=>{
-    if(isHost && isPublicRoom && Object.keys(roster).length>=4 && !roster[conn.peer]){
-      conn.send({t:'roomFull'});
-      setTimeout(()=>{ try{conn.close();}catch(e){} }, 300);
-      return;
-    }
-    conn.send(helloPayload());
-  });
+  conn.on('open', ()=>{ conn.send(helloPayload()); });
   conn.on('data', data=>handleData(conn.peer, data));
   conn.on('close', ()=>handlePeerLeave(conn.peer));
   conn.on('error', ()=>handlePeerLeave(conn.peer));
@@ -1087,17 +945,8 @@ function handleData(fromId, data){
     if(roster[fromId]){ roster[fromId].muted = data.muted; renderPlayers(); }
   } else if(data.t==='gamestart'){
     if(!isHost){
-      gameSessionId = data.sessionId;
-      netStartedLobby = true;
-      document.getElementById('matchmaking-overlay').classList.remove('show');
       document.getElementById('join-game-banner').classList.add('show');
     }
-  } else if(data.t==='roomFull'){
-    showToast('Sảnh công khai vừa đủ 4 người, đợi ván này bắt đầu rồi vào trận sau nhé!', 'error');
-    resetRoomState();
-    document.getElementById('lobby-wrap').classList.add('hidden');
-  } else if(data.t==='matchCountdown'){
-    if(!isHost) runMatchCountdown(null);
   }
 }
 
@@ -1172,10 +1021,7 @@ function startPeerAndJoin(customId, targetId, hostFlag, publicFlag, codeForRoom)
 }
 
 function createFriendRoom(){
-  // Mỗi lần tạo phòng -> 1 mã phòng MỚI HOÀN TOÀN (không dùng lại ID cố định của hồ sơ nữa),
-  // để 2 phòng khác nhau không bao giờ trùng mã, kể cả khi cùng 1 người tạo nhiều lần.
-  const freshRoomCode = genPid();
-  startPeerAndJoin(freshRoomCode, null, true, false, freshRoomCode);
+  startPeerAndJoin(profile.pid, null, true, false, profile.pid);
 }
 function joinFriendRoom(code){
   startPeerAndJoin(null, code, false, false, code);
@@ -1224,18 +1070,8 @@ function sendChat(){
   const inp = document.getElementById('chat-input');
   const text = inp.value.trim();
   if(!text) return;
-  if(activeThread==='room'){
-    addChatMsg(profile.name, text, false);
-    broadcastAll({t:'chat', name:profile.name, text});
-  } else {
-    if(!dmThreads[activeThread]) dmThreads[activeThread] = [];
-    dmThreads[activeThread].push({name:profile.name, text});
-    renderMsgList(dmThreads[activeThread]);
-    ensureDMConn(activeThread, conn=>{
-      if(conn && conn.open) conn.send({t:'dm', name:profile.name, text});
-      else showToast('Bạn này hiện không online, thử lại sau nhé.', 'error');
-    });
-  }
+  addChatMsg(profile.name, text, false);
+  broadcastAll({t:'chat', name:profile.name, text});
   inp.value = '';
 }
 document.getElementById('mic-toggle-btn').addEventListener('click', ()=>{
@@ -1249,28 +1085,26 @@ document.getElementById('mic-toggle-btn').addEventListener('click', ()=>{
   renderPlayers();
   broadcastAll({t:'mic', muted:!micOn});
 });
-let gameSessionId = null;
+let STARTING_CASH = 1500;
+document.getElementById('cash-slider').addEventListener('input', e=>{
+  STARTING_CASH = parseInt(e.target.value,10);
+  document.getElementById('cash-slider-label').textContent = '$'+STARTING_CASH;
+});
 function openGameWindow(){
-  netStartedLobby = true;
-  document.getElementById('matchmaking-overlay').classList.remove('show');
-  // Dùng ID PHIÊN RIÊNG cho mỗi ván (không dùng thẳng roomCode/pid cố định nữa) để
-  // 2 ván chơi khác nhau của cùng 1 người không bao giờ trùng ID với nhau.
-  const room = gameSessionId || (isPublicRoom ? PUBLIC_ROOM_ID : roomCode);
+  const room = isPublicRoom ? PUBLIC_ROOM_ID : roomCode;
   const params = new URLSearchParams({
     net:'1', room, host: isHost?'1':'0',
     pid: profile.pid, name: profile.name, emoji: profile.emoji, color: profile.color,
-    skinColor: (SKINS.find(s=>s.id===profile.equippedSkin)||{}).color || ''
+    cash: STARTING_CASH
   });
   // Chuyển sang trang game NGAY TRONG TAB HIỆN TẠI (thay vì mở tab mới),
   // để trang sảnh chờ đóng hẳn -> tắt mic & nhạc nền của sảnh, không bị chồng
   // tiếng với mic/nhạc của trang game nữa.
-  window.location.href = 'CTPplayer.html?'+params.toString();
+  window.location.href = 'co-ty-phu-3d.html?'+params.toString();
 }
 document.getElementById('start-game-btn').addEventListener('click', ()=>{
   if(isHost){
-    const base = isPublicRoom ? PUBLIC_ROOM_ID : roomCode;
-    gameSessionId = base+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-    broadcastAll({t:'gamestart', sessionId:gameSessionId});
+    broadcastAll({t:'gamestart'});
     // Đợi một nhịp ngắn để tin nhắn 'gamestart' kịp gửi đi qua kết nối
     // trước khi trang sảnh bị đóng (điều hướng sang trang game).
     setTimeout(openGameWindow, 150);
@@ -1283,10 +1117,21 @@ document.getElementById('join-game-btn').addEventListener('click', ()=>{
   openGameWindow();
 });
 
-/* Nút "Ghi nhận ván vừa chơi" (thưởng ngẫu nhiên, không liên quan kết quả) đã bị xoá bỏ.
-   Vàng/XP giờ được TỰ ĐỘNG tính theo kết quả thật và ghi thẳng vào hồ sơ ngay khi
-   ván kết thúc, ngay trong trang game (CTPplayer.html / CTPbot.html) — không cần
-   quay lại sảnh bấm gì nữa. */
+const CLAIM_COOLDOWN_MS = 3*60*1000;
+document.getElementById('claim-btn').addEventListener('click', ()=>{
+  const now = Date.now();
+  if(now - (profile.lastClaim||0) < CLAIM_COOLDOWN_MS){
+    const secLeft = Math.ceil((CLAIM_COOLDOWN_MS - (now-(profile.lastClaim||0)))/1000);
+    showToast('Vui lòng đợi '+secLeft+'s trước khi ghi nhận ván tiếp theo');
+    return;
+  }
+  const gold = 20 + Math.floor(Math.random()*31);
+  const xp = 10 + Math.floor(Math.random()*21);
+  profile.gold += gold; profile.xp += xp; profile.lastClaim = now;
+  saveProfile(profile); renderProfileBar();
+  if(myId){ broadcastAll(helloPayload()); }
+  showToast('+'+gold+' 💰 và +'+xp+' XP!', 'coin');
+});
 
 /* ============================================================
    5. BẠN BÈ
@@ -1328,33 +1173,6 @@ function renderFriends(){
   });
 }
 document.getElementById('open-friends-btn').addEventListener('click', ()=>{ renderFriends(); openModal('friends-modal'); });
-document.getElementById('mm-cancel-btn').addEventListener('click', ()=>{
-  resetRoomState();
-  document.getElementById('lobby-wrap').classList.add('hidden');
-});
-document.getElementById('open-chat-btn').addEventListener('click', ()=>{
-  const inRoom = !document.getElementById('lobby-wrap').classList.contains('hidden');
-  const hasFriends = (profile.friends||[]).length>0;
-  document.getElementById('chat-modal-empty').style.display = (inRoom||hasFriends) ? 'none' : 'block';
-  document.getElementById('chat-modal-body').style.display = (inRoom||hasFriends) ? 'flex' : 'none';
-  const slot = document.getElementById('chat-modal-slot');
-  const panel = document.getElementById('chat-panel');
-  if(panel && slot && panel.parentElement!==slot) slot.appendChild(panel);
-  activeThread = inRoom ? 'room' : 'room'; // mặc định vào chat chung nếu có phòng, ds bạn bè vẫn luôn hiện để chọn
-  document.getElementById('dm-thread-title').textContent = inRoom ? 'Cả phòng' : 'Chọn 1 người bạn để chat riêng';
-  renderMsgList(roomMsgs);
-  renderDMList();
-  openModal('chat-modal');
-  if(inRoom||hasFriends) document.getElementById('chat-input').focus();
-});
-function closeChatModal(){
-  const panel = document.getElementById('chat-panel');
-  const home = document.querySelector('.lobby-body');
-  if(panel && home && panel.parentElement!==home) home.appendChild(panel);
-  closeModal('chat-modal');
-}
-document.getElementById('chat-modal-close').addEventListener('click', closeChatModal);
-document.getElementById('chat-modal').addEventListener('click', e=>{ if(e.target.id==='chat-modal') closeChatModal(); });
 document.getElementById('add-friend-btn').addEventListener('click', ()=>{
   const pid = document.getElementById('add-friend-pid').value.trim().toUpperCase();
   const nick = document.getElementById('add-friend-name').value.trim();
