@@ -274,24 +274,17 @@
         <button class="count-btn active" data-n="4">3 máy</button>
       </div>
 
-      <div class="setup-label">Tiền khởi điểm</div>
-      <div class="vol-row">
-        <span class="vol-icon">💰</span>
-        <input type="range" id="cash-slider" min="200" max="1500" step="50" value="1500">
-        <span class="vol-label" id="cash-slider-label">$1500</span>
-      </div>
-
       <div class="setup-label">Âm thanh</div>
       <div id="setup-sound">
         <div class="vol-row">
           <span class="vol-icon">🎵</span>
-          <input type="range" class="music-slider" min="0" max="100" value="70">
-          <span class="vol-label music-vol-label">55%</span>
+          <input type="range" class="music-slider" min="0" max="100" value="100">
+          <span class="vol-label music-vol-label">100%</span>
         </div>
         <div class="vol-row">
           <span class="vol-icon">🔊</span>
-          <input type="range" class="sfx-slider" min="0" max="100" value="90">
-          <span class="vol-label sfx-vol-label">90%</span>
+          <input type="range" class="sfx-slider" min="0" max="100" value="75">
+          <span class="vol-label sfx-vol-label">75%</span>
         </div>
       </div>
 
@@ -367,13 +360,13 @@
         <div class="menu-divider"></div>
         <div class="vol-row">
           <span class="vol-icon">🎵</span>
-          <input type="range" class="music-slider" min="0" max="100" value="70">
-          <span class="vol-label music-vol-label">55%</span>
+          <input type="range" class="music-slider" min="0" max="100" value="100">
+          <span class="vol-label music-vol-label">100%</span>
         </div>
         <div class="vol-row">
           <span class="vol-icon">🔊</span>
-          <input type="range" class="sfx-slider" min="0" max="100" value="90">
-          <span class="vol-label sfx-vol-label">90%</span>
+          <input type="range" class="sfx-slider" min="0" max="100" value="75">
+          <span class="vol-label sfx-vol-label">75%</span>
         </div>
         <div id="player-volume-panel" style="display:none;">
           <div class="menu-divider"></div>
@@ -1928,7 +1921,7 @@ const DICE_THROW_B64 = "SUQzAwAAAAAAGFRYWFgAAAAOAAAAVFhYWABtcDQxaXNvbf/7lGQAAAAA
 // 1) Background music = the YouTube video (its own <iframe>, own volume, controlled via postMessage)
 // 2) Sound effects (dice, hops, cards) = Web Audio, synthesized locally, unaffected by the music
 let audioCtx = null, sfxGain = null;
-let musicVolume = 70, sfxVolume = 90;
+let musicVolume = 100, sfxVolume = 75;
 let musicEnabled = true, sfxEnabled = true;
 const ytFrame = document.getElementById('yt-bg');
 
@@ -2127,11 +2120,7 @@ document.querySelectorAll('.count-btn').forEach(btn=>{
     playerCount = parseInt(btn.dataset.n,10);
   };
 });
-let STARTING_CASH = 1500;
-document.getElementById('cash-slider').addEventListener('input', e=>{
-  STARTING_CASH = parseInt(e.target.value,10);
-  document.getElementById('cash-slider-label').textContent = '$'+STARTING_CASH;
-});
+let STARTING_CASH = parseInt(netParams.get('cash'),10) || 1500;
 
 function applyPlayerCountToScene(){
   for(let i=0;i<4;i++){
