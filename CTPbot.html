@@ -64,18 +64,18 @@
   #toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
 
   #card-popup{
-    position:absolute; top:50%; left:50%; z-index:70; pointer-events:none;
-    width:min(84vw,320px); padding:22px 22px 24px; border-radius:16px; text-align:center;
-    box-shadow:0 20px 50px rgba(0,0,0,.5);
-    transform:translate(-50%,-50%) scale(0.4) rotate(-8deg); opacity:0;
-    transition:transform .38s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+    position:fixed; top:50%; left:50%; z-index:70; pointer-events:none;
+    width:min(80vw,440px); aspect-ratio:1656/950; border-radius:14px; text-align:left;
+    box-shadow:0 20px 50px rgba(0,0,0,.55); background-size:cover; background-position:center;
+    transform:translate(-50%,-50%) scale(0.15) rotate(-18deg); opacity:0;
+    transition:left .55s cubic-bezier(.22,1.2,.36,1), top .55s cubic-bezier(.22,1.2,.36,1), transform .55s cubic-bezier(.22,1.2,.36,1), opacity .3s;
   }
   #card-popup.show{ transform:translate(-50%,-50%) scale(1) rotate(0deg); opacity:1; }
-  #card-popup .cp-icon{ font-size:44px; margin-bottom:6px; }
-  #card-popup .cp-label{ font-weight:800; font-size:15px; letter-spacing:1px; margin-bottom:10px; }
-  #card-popup .cp-text{ font-size:15px; font-weight:600; line-height:1.45; }
-  #card-popup.chance{ background:linear-gradient(180deg,#fff4e0,#ffe3ad); border:4px solid #e8a622; color:#5a3d10; }
-  #card-popup.chest{ background:linear-gradient(180deg,#fff9e0,#ffe98f); border:4px solid #c9a000; color:#5a4a10; }
+  #card-popup .cp-icon{ display:none; }
+  #card-popup .cp-label{ position:absolute; left:6%; top:9%; font-weight:800; font-size:clamp(14px,3vw,20px); letter-spacing:.5px; text-decoration:underline; color:#111; }
+  #card-popup .cp-text{ position:absolute; left:6%; top:23%; width:56%; font-size:clamp(11px,2.1vw,14px); font-weight:700; line-height:1.5; color:#111; }
+  #card-popup.chance{ background-image:url('assets/co-hoi.png'); }
+  #card-popup.chest{ background-image:url('assets/khi-van.png'); }
 
   #endgame-overlay{
     display:none; position:fixed; inset:0; z-index:200; background:rgba(20,15,10,.82);
@@ -2203,16 +2203,30 @@ function speak(text){
   }catch(e){}
 }
 function speakCardText(text){ speak(text); }
-function showCardPopup(deckType, text, voiceKey){
+function tileScreenPos(index){
+  const {x,z} = tileWorldPos(index);
+  const v = new THREE.Vector3(x, 0.6, z).project(camera);
+  const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
+  return { x:(v.x*0.5+0.5)*w, y:(-v.y*0.5+0.5)*h };
+}
+function showCardPopup(deckType, text, voiceKey, originIndex){
   const popup = document.getElementById('card-popup');
-  document.getElementById('cp-icon').textContent = deckType==='chance' ? '❓' : '🎁';
   document.getElementById('cp-label').textContent = deckType==='chance' ? 'CƠ HỘI' : 'KHÍ VẬN';
   document.getElementById('cp-text').textContent = text;
-  popup.className = deckType; // resets then re-adds base class for styling
-  popup.classList.add(deckType, 'show');
+  popup.className = '';
+  const origin = (typeof originIndex==='number') ? tileScreenPos(originIndex) : {x:innerWidth/2,y:innerHeight/2};
+  popup.style.left = origin.x+'px'; popup.style.top = origin.y+'px';
+  popup.style.transform = 'translate(-50%,-50%) scale(0.15) rotate(-18deg)';
+  popup.style.opacity = '0';
+  popup.classList.add(deckType);
+  void popup.offsetWidth;
+  requestAnimationFrame(()=>{
+    popup.style.left='50%'; popup.style.top='50%';
+    popup.classList.add('show');
+  });
   playVoice(voiceKey, text);
   clearTimeout(showCardPopup._h);
-  showCardPopup._h = setTimeout(()=>popup.classList.remove('show'), 2600);
+  showCardPopup._h = setTimeout(()=>popup.classList.remove('show'), 3000);
 }
 
 function doRoll(){
@@ -2484,7 +2498,7 @@ function goToTile(playerIdx, targetIdx, opts, callback){
 function applyCard(playerIdx, deckType, card){
   const p = players[playerIdx];
   playSfx('card');
-  showCardPopup(deckType, (p.isBot?'🤖 '+p.name+': ':'')+card.text, card.voice);
+  showCardPopup(deckType, (p.isBot?'🤖 '+p.name+': ':'')+card.text, card.voice, p.pos);
   setTimeout(()=>{
     if(card.type==='gain'){
       p.cash += card.value; updateHUD(); endTurn();
