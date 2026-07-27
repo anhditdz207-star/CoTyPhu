@@ -167,6 +167,7 @@
     font-weight:800;font-size:15px;color:#7a6a4a;cursor:pointer;
   }
   .count-btn.active{background:#e8a622;border-color:#c9861a;color:#3a2400;}
+
   .slot-row{
     display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;
     padding:8px 10px;margin-bottom:8px;border:2px solid #ecdfb8;
@@ -271,6 +272,13 @@
         <button class="count-btn" data-n="2">1 máy</button>
         <button class="count-btn" data-n="3">2 máy</button>
         <button class="count-btn active" data-n="4">3 máy</button>
+      </div>
+
+      <div class="setup-label">Tiền khởi điểm</div>
+      <div class="vol-row">
+        <span class="vol-icon">💰</span>
+        <input type="range" id="cash-slider" min="200" max="1500" step="50" value="1500">
+        <span class="vol-label" id="cash-slider-label">$1500</span>
       </div>
 
       <div class="setup-label">Âm thanh</div>
@@ -2034,6 +2042,11 @@ document.querySelectorAll('.count-btn').forEach(btn=>{
     playerCount = parseInt(btn.dataset.n,10);
   };
 });
+let STARTING_CASH = 1500;
+document.getElementById('cash-slider').addEventListener('input', e=>{
+  STARTING_CASH = parseInt(e.target.value,10);
+  document.getElementById('cash-slider-label').textContent = '$'+STARTING_CASH;
+});
 
 function applyPlayerCountToScene(){
   for(let i=0;i<4;i++){
@@ -2048,6 +2061,7 @@ document.getElementById('start-btn').onclick = ()=>{
   ensureAudio();
   setMusicEnabled(musicEnabled);
   setSfxEnabled(sfxEnabled);
+  players.forEach(p=>p.cash=STARTING_CASH);
   try{
     const prof = JSON.parse(localStorage.getItem('ctp_profile_v1'));
     const SKIN_COLORS = {classic:'#c9c9c9',ruby:'#c0293d',sapphire:'#2f6fed',emerald:'#2fa84f',gold:'#e8a622',amethyst:'#8a4fd0',obsidian:'#222'};
@@ -2207,15 +2221,26 @@ function speakCardText(text){ speak(text); }
 const CARD_IMG_CACHE = {chance:new Image(), chest:new Image()};
 CARD_IMG_CACHE.chance.src = 'assets/co-hoi.png';
 CARD_IMG_CACHE.chest.src = 'assets/khi-van.png';
+let cardDismissible = false;
+function dismissCardPopup(){
+  if(!cardDismissible) return;
+  document.getElementById('card-popup').classList.remove('show');
+  cardDismissible = false;
+  clearTimeout(showCardPopup._h);
+}
+document.addEventListener('click', dismissCardPopup);
+document.addEventListener('touchstart', dismissCardPopup);
 function showCardPopup(deckType, text, voiceKey){
   const popup = document.getElementById('card-popup');
   document.getElementById('cp-label').textContent = deckType==='chance' ? 'CƠ HỘI' : 'KHÍ VẬN';
   document.getElementById('cp-text').textContent = text;
   popup.className = deckType;
   popup.classList.add('show');
+  cardDismissible = false;
   clearTimeout(showCardPopup._h);
   playVoice(voiceKey, text, ()=>{
-    showCardPopup._h = setTimeout(()=>popup.classList.remove('show'), 3000);
+    cardDismissible = true;
+    showCardPopup._h = setTimeout(()=>{ popup.classList.remove('show'); cardDismissible=false; }, 3000);
   });
 }
 
