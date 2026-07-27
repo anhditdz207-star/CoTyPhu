@@ -64,9 +64,9 @@
   #toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
 
   #card-popup{
-    position:fixed; top:50%; left:50%; z-index:70; pointer-events:none;
-    width:min(80vw,440px); aspect-ratio:1656/950; border-radius:14px; text-align:left;
-    box-shadow:0 20px 50px rgba(0,0,0,.55); background-size:cover; background-position:center;
+    position:absolute; top:50%; left:50%; z-index:70; pointer-events:none;
+    width:min(80vw,440px); height:min(45.9vw,252px); border-radius:14px; text-align:left;
+    box-shadow:0 20px 50px rgba(0,0,0,.55); background-size:cover; background-position:center; background-color:#e0304a;
     transform:translate(-50%,-50%) scale(0.15) rotate(-18deg); opacity:0;
     transition:left .55s cubic-bezier(.22,1.2,.36,1), top .55s cubic-bezier(.22,1.2,.36,1), transform .55s cubic-bezier(.22,1.2,.36,1), opacity .3s;
   }
@@ -1925,18 +1925,19 @@ function loadVoiceClips(){
   });
 }
 // Plays a real recorded voice line if we have it; otherwise falls back to TTS with fallbackText.
-function playVoice(key, fallbackText){
-  if(!sfxEnabled) return;
+function playVoice(key, fallbackText, onEnd){
+  if(!sfxEnabled){ if(onEnd) onEnd(); return; }
   if(audioCtx && voiceBuffers[key]){
     window.speechSynthesis && window.speechSynthesis.cancel();
     const src = audioCtx.createBufferSource();
     src.buffer = voiceBuffers[key];
     const g = audioCtx.createGain(); g.gain.value = 1;
     src.connect(g); g.connect(sfxGain);
+    if(onEnd) src.onended = onEnd;
     src.start();
   } else if(fallbackText){
-    speak(fallbackText);
-  }
+    speak(fallbackText, onEnd);
+  } else if(onEnd) onEnd();
 }
 let diceThrowBuffer = null;
 function loadDiceThrowBuffer(){
@@ -2191,23 +2192,28 @@ function pickGentleFemaleVoice(){
   if(knownFemale) return knownFemale;
   return candidates[0] || null; // never fall back to a known-male voice
 }
-function speak(text){
-  if(!sfxEnabled || !('speechSynthesis' in window)) return;
+function speak(text, onEnd){
+  if(!sfxEnabled || !('speechSynthesis' in window)){ if(onEnd) onEnd(); return; }
   try{
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     const voice = pickGentleFemaleVoice();
     if(voice){ utter.voice = voice; utter.lang = voice.lang; } else { utter.lang = 'vi-VN'; }
     utter.pitch = 1.15; utter.rate = 0.9; utter.volume = 0.9;
+    if(onEnd){ utter.onend = onEnd; utter.onerror = onEnd; }
     window.speechSynthesis.speak(utter);
-  }catch(e){}
+  }catch(e){ if(onEnd) onEnd(); }
 }
 function speakCardText(text){ speak(text); }
 function tileScreenPos(index){
   const {x,z} = tileWorldPos(index);
   const v = new THREE.Vector3(x, 0.6, z).project(camera);
-  const w = renderer.domElement.clientWidth, h = renderer.domElement.clientHeight;
-  return { x:(v.x*0.5+0.5)*w, y:(-v.y*0.5+0.5)*h };
+  const cr = renderer.domElement.getBoundingClientRect();
+  const popup = document.getElementById('card-popup');
+  const pr = popup.offsetParent ? popup.offsetParent.getBoundingClientRect() : {left:0,top:0};
+  const cx = cr.left + (v.x*0.5+0.5)*cr.width;
+  const cy = cr.top + (-v.y*0.5+0.5)*cr.height;
+  return { x:cx-pr.left, y:cy-pr.top };
 }
 function showCardPopup(deckType, text, voiceKey, originIndex){
   const popup = document.getElementById('card-popup');
@@ -2224,9 +2230,10 @@ function showCardPopup(deckType, text, voiceKey, originIndex){
     popup.style.left='50%'; popup.style.top='50%';
     popup.classList.add('show');
   });
-  playVoice(voiceKey, text);
   clearTimeout(showCardPopup._h);
-  showCardPopup._h = setTimeout(()=>popup.classList.remove('show'), 3000);
+  playVoice(voiceKey, text, ()=>{
+    showCardPopup._h = setTimeout(()=>popup.classList.remove('show'), 3000);
+  });
 }
 
 function doRoll(){
