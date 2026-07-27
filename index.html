@@ -438,6 +438,7 @@
       <div class="mm-spinner">🔎</div>
       <div class="mm-text" id="mm-text">Đang tìm người chơi... (1/4)</div>
       <div class="mm-countdown" id="mm-countdown" style="display:none;"></div>
+      <button id="mm-cancel-btn" style="margin-top:14px;background:#5a3d10;color:#fff;border:none;padding:8px 20px;border-radius:999px;cursor:pointer;font-weight:800;">Huỷ</button>
     </div>
   </div>
 
@@ -1257,7 +1258,8 @@ function openGameWindow(){
   const room = gameSessionId || (isPublicRoom ? PUBLIC_ROOM_ID : roomCode);
   const params = new URLSearchParams({
     net:'1', room, host: isHost?'1':'0',
-    pid: profile.pid, name: profile.name, emoji: profile.emoji, color: profile.color
+    pid: profile.pid, name: profile.name, emoji: profile.emoji, color: profile.color,
+    skinColor: (SKINS.find(s=>s.id===profile.equippedSkin)||{}).color || ''
   });
   // Chuyển sang trang game NGAY TRONG TAB HIỆN TẠI (thay vì mở tab mới),
   // để trang sảnh chờ đóng hẳn -> tắt mic & nhạc nền của sảnh, không bị chồng
@@ -1326,6 +1328,10 @@ function renderFriends(){
   });
 }
 document.getElementById('open-friends-btn').addEventListener('click', ()=>{ renderFriends(); openModal('friends-modal'); });
+document.getElementById('mm-cancel-btn').addEventListener('click', ()=>{
+  resetRoomState();
+  document.getElementById('lobby-wrap').classList.add('hidden');
+});
 document.getElementById('open-chat-btn').addEventListener('click', ()=>{
   const inRoom = !document.getElementById('lobby-wrap').classList.contains('hidden');
   const hasFriends = (profile.friends||[]).length>0;

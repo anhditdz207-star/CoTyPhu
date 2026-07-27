@@ -2048,6 +2048,12 @@ document.getElementById('start-btn').onclick = ()=>{
   ensureAudio();
   setMusicEnabled(musicEnabled);
   setSfxEnabled(sfxEnabled);
+  try{
+    const prof = JSON.parse(localStorage.getItem('ctp_profile_v1'));
+    const SKIN_COLORS = {classic:'#c9c9c9',ruby:'#c0293d',sapphire:'#2f6fed',emerald:'#2fa84f',gold:'#e8a622',amethyst:'#8a4fd0',obsidian:'#222'};
+    const hex = prof && SKIN_COLORS[prof.equippedSkin];
+    if(hex) PLAYER_COLORS[0] = parseInt(hex.replace('#',''),16);
+  }catch(e){}
   applyPlayerCountToScene();
   document.getElementById('setup-overlay').style.display = 'none';
   currentPlayer = 0;

@@ -980,6 +980,7 @@ const NET_HOST_ID = NET_ROOM + '-game';
 const NET_MY_PID = netParams.get('pid') || ('guest-'+Math.random().toString(36).slice(2,8));
 const NET_MY_NAME = netParams.get('name') || 'Người chơi';
 const NET_MY_EMOJI = netParams.get('emoji') || '🙂';
+const NET_MY_SKINCOLOR = netParams.get('skinColor') || '';
 let netPeer=null, netMyId=null, netConns={}, netRoster={}, netSlots=[], myNetSlot=-1, netStarted=false;
 let localStream=null, micOn=true, mediaCalls={}, audioEls={};
 // --- Định danh bền vững (pid) tách biệt khỏi id kết nối tạm thời (netMyId) ---
@@ -1130,7 +1131,7 @@ function netHandleData(fromId, data){
     Object.keys(netRoster).forEach(oldId=>{
       if(oldId!==fromId && netRoster[oldId] && netRoster[oldId].pid===data.pid) delete netRoster[oldId];
     });
-    netRoster[fromId] = {pid:data.pid, name:data.name, emoji:data.emoji};
+    netRoster[fromId] = {pid:data.pid, name:data.name, emoji:data.emoji, skinColor:data.skinColor};
     if(NET_IS_HOST){
       pidToConn[data.pid] = fromId;
       const wasDisconnected = !!disconnectedPids[data.pid];
@@ -1159,6 +1160,7 @@ function netHandleData(fromId, data){
     netSlots.forEach((s,i)=>{
       if(players[i]) players[i].isLocal = (i===myNetSlot);
       updatePlayerCardName(i, (s.emoji?s.emoji+' ':'')+s.name, s.emoji);
+      if(s.skinColor && s.skinColor[0]==='#') PLAYER_COLORS[i] = parseInt(s.skinColor.replace('#',''),16);
     });
     for(let i=netSlots.length;i<4;i++){ players[i].isBot = true; players[i].isLocal = NET_IS_HOST; updatePlayerCardName(i, '🤖 Máy '+(i+1), '🤖'); }
     netStarted = true;
@@ -1202,7 +1204,7 @@ function netBroadcastRoster(){
 function netSetupConn(conn){
   netConns[conn.peer] = conn;
   conn.on('open', ()=>{
-    conn.send({t:'hello', id:netMyId, pid:NET_MY_PID, name:NET_MY_NAME, emoji:NET_MY_EMOJI});
+    conn.send({t:'hello', id:netMyId, pid:NET_MY_PID, name:NET_MY_NAME, emoji:NET_MY_EMOJI, skinColor:NET_MY_SKINCOLOR});
     if(NET_IS_HOST) netBroadcastRoster();
   });
   conn.on('data', data=>netHandleData(conn.peer, data));
@@ -1239,7 +1241,7 @@ async function netInit(){
   netPeer = NET_IS_HOST ? new Peer(NET_HOST_ID) : new Peer();
   netPeer.on('open', id=>{
     netMyId = id;
-    netRoster[id] = {pid:NET_MY_PID, name:NET_MY_NAME, emoji:NET_MY_EMOJI};
+    netRoster[id] = {pid:NET_MY_PID, name:NET_MY_NAME, emoji:NET_MY_EMOJI, skinColor:NET_MY_SKINCOLOR};
     if(!NET_IS_HOST){
       const conn = netPeer.connect(NET_HOST_ID);
       netSetupConn(conn);
@@ -1252,6 +1254,7 @@ async function netInit(){
       netSlots.forEach((s,i)=>{
         if(players[i]) players[i].isLocal = (i===myNetSlot);
         updatePlayerCardName(i, (s.emoji?s.emoji+' ':'')+s.name, s.emoji);
+        if(s.skinColor && s.skinColor[0]==='#') PLAYER_COLORS[i] = parseInt(s.skinColor.replace('#',''),16);
       });
       for(let i=netSlots.length;i<4;i++){ players[i].isBot = true; players[i].isLocal = true; updatePlayerCardName(i, '🤖 Máy '+(i+1), '🤖'); }
       netStarted = true;
@@ -1414,6 +1417,7 @@ function netApplyStart(slots, startIdx){
     players[i].isLocal = (i===myNetSlot);
     pidToConn[s.pid] = s.id;
     updatePlayerCardName(i, (s.emoji?s.emoji+' ':'')+s.name, s.emoji);
+    if(s.skinColor && s.skinColor[0]==='#') PLAYER_COLORS[i] = parseInt(s.skinColor.replace('#',''),16);
   });
   for(let i=slots.length;i<4;i++){
     players[i].isBot = true;
@@ -1437,7 +1441,7 @@ function netApplyStart(slots, startIdx){
 document.getElementById('net-start-btn') && document.getElementById('net-start-btn').addEventListener('click', ()=>{
   if(!NET_IS_HOST) return;
   const ids = Object.keys(netRoster);
-  const slots = ids.map(id=>({id, name:netRoster[id].name, emoji:netRoster[id].emoji, pid:netRoster[id].pid}));
+  const slots = ids.map(id=>({id, name:netRoster[id].name, emoji:netRoster[id].emoji, pid:netRoster[id].pid, skinColor:netRoster[id].skinColor}));
   const startIdx = Math.floor(Math.random()*slots.length); // random ai đi trước, chỉ chủ phòng quyết định 1 lần
   netBroadcastToGuests({t:'start', slots, startIdx}, null);
   netApplyStart(slots, startIdx);
