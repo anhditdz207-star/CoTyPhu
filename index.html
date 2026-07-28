@@ -421,11 +421,6 @@
       </div>
     </div>
 
-    <div id="cash-row" style="display:flex;align-items:center;gap:10px;padding:8px 4px;">
-      <span style="font-size:13px;">💰 Tiền khởi điểm</span>
-      <input type="range" id="cash-slider" min="200" max="1500" step="50" value="1500" style="flex:1;">
-      <span id="cash-slider-label" style="font-size:12px;font-weight:700;width:44px;text-align:right;">$1500</span>
-    </div>
     <div class="lobby-controls">
       <button class="mic-toggle" id="mic-toggle-btn">🎙️ Mic: Bật</button>
       <button class="start-btn" id="start-game-btn">▶️ Bắt đầu ván chơi</button>
@@ -614,6 +609,7 @@ const SKINS = [
   {id:'amethyst', name:'Tím Amethyst', color:'#8a4fd0', price:150},
   {id:'obsidian', name:'Obsidian đen', color:'#222', price:220},
   {id:'rainbow', name:'Cầu vồng', color:'conic-gradient(from 0deg,#f66,#ff6,#6f6,#6ff,#66f,#f6f,#f66)', price:400},
+  {id:'character', name:'👤 Nhân Vật Đặc Biệt', color:'#3a3a3a', price:999, special:true},
 ];
 
 function genPid(){
@@ -645,11 +641,6 @@ function saveProfile(p){
   syncProfileToCloud(p);
 }
 let profile = loadProfile();
-let STARTING_CASH = 1500;
-document.getElementById('cash-slider').addEventListener('input', e=>{
-  STARTING_CASH = parseInt(e.target.value,10);
-  document.getElementById('cash-slider-label').textContent = '$'+STARTING_CASH;
-});
 
 function tierFor(xp){
   let t = TIERS[0];
@@ -1127,7 +1118,6 @@ function enterLobby(title){
   document.getElementById('lobby-title').textContent = title;
   document.getElementById('room-code-text').textContent = isPublicRoom ? 'CÔNG KHAI' : roomCode;
   document.getElementById('room-code-box').style.display = isPublicRoom ? 'none' : 'flex';
-  document.getElementById('cash-row').style.display = isPublicRoom ? 'none' : 'flex';
   document.getElementById('lobby-wrap').classList.remove('hidden');
   document.getElementById('lobby-wrap').scrollIntoView({behavior:'smooth', block:'start'});
   roster[myId] = { name:profile.name, emoji:profile.emoji, color:profile.color, muted:false, speaking:false };
@@ -1270,8 +1260,7 @@ function openGameWindow(){
   const params = new URLSearchParams({
     net:'1', room, host: isHost?'1':'0',
     pid: profile.pid, name: profile.name, emoji: profile.emoji, color: profile.color,
-    skinColor: (SKINS.find(s=>s.id===profile.equippedSkin)||{}).color || '',
-    cash: isPublicRoom ? 200 : STARTING_CASH
+    skinColor: profile.equippedSkin==='character' ? 'CHARACTER' : ((SKINS.find(s=>s.id===profile.equippedSkin)||{}).color || '')
   });
   // Chuyển sang trang game NGAY TRONG TAB HIỆN TẠI (thay vì mở tab mới),
   // để trang sảnh chờ đóng hẳn -> tắt mic & nhạc nền của sảnh, không bị chồng
