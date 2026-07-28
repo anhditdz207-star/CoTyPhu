@@ -972,6 +972,20 @@ function updateTokenColor(i){
   tok.children[0].material.color.setHex(PLAYER_COLORS[i]);
   tok.children[1].material.color.setHex(PLAYER_COLORS[i]);
 }
+// Skin "Cầu vồng": không phải 1 màu cố định nên không thể gán thẳng vào PLAYER_COLORS
+// như các skin khác — thay vào đó liên tục xoay vòng màu (dùng CHUNG PLAYER_COLORS[i]
+// nên nhà xây lúc nào cũng lấy đúng màu quân cờ đang hiện tại, luôn đồng bộ với nhau).
+const rainbowPlayers = {};
+let lastRainbowTick = 0;
+function tickRainbow(now){
+  if(now - lastRainbowTick < 80) return; // ~12 lần/giây là đủ mượt, đỡ tốn máy
+  lastRainbowTick = now;
+  Object.keys(rainbowPlayers).forEach(i=>{
+    const hue = (now/1800) % 1;
+    PLAYER_COLORS[i] = new THREE.Color().setHSL(hue, 0.75, 0.5).getHex();
+    updateTokenColor(i);
+  });
+}
 /* --- Quân cờ Nhân Vật Đặc Biệt (999 vàng, bán trong shop, màu cố định không đổi) --- */
 const SKIN_=0xd9a066,HAIR_=0x2a1c12,SHIRT_=0x4d4d4d,PANTS_=0x161616,SHOES_=0x0d0d0d,BASECLR_=0x161616;
 function makeCharacterPiece(){
@@ -1238,7 +1252,7 @@ function netHandleData(fromId, data){
     netSlots.forEach((s,i)=>{
       if(players[i]) players[i].isLocal = (i===myNetSlot);
       updatePlayerCardName(i, (s.emoji?s.emoji+' ':'')+s.name, s.emoji);
-      if(s.skinColor==='CHARACTER'){ swapToCharacterPiece(i); } else if(s.skinColor && s.skinColor[0]==='#'){ PLAYER_COLORS[i] = parseInt(s.skinColor.replace('#',''),16); updateTokenColor(i); }
+      if(s.skinColor==='CHARACTER'){ swapToCharacterPiece(i); } else if(s.skinColor==='RAINBOW'){ rainbowPlayers[i]=true; } else if(s.skinColor && s.skinColor[0]==='#'){ PLAYER_COLORS[i] = parseInt(s.skinColor.replace('#',''),16); updateTokenColor(i); }
     });
     for(let i=netSlots.length;i<4;i++){ players[i].isBot = true; players[i].isLocal = NET_IS_HOST; updatePlayerCardName(i, '🤖 Máy '+(i+1), '🤖'); }
     netStarted = true;
@@ -1332,7 +1346,7 @@ async function netInit(){
       netSlots.forEach((s,i)=>{
         if(players[i]) players[i].isLocal = (i===myNetSlot);
         updatePlayerCardName(i, (s.emoji?s.emoji+' ':'')+s.name, s.emoji);
-        if(s.skinColor==='CHARACTER'){ swapToCharacterPiece(i); } else if(s.skinColor && s.skinColor[0]==='#'){ PLAYER_COLORS[i] = parseInt(s.skinColor.replace('#',''),16); updateTokenColor(i); }
+        if(s.skinColor==='CHARACTER'){ swapToCharacterPiece(i); } else if(s.skinColor==='RAINBOW'){ rainbowPlayers[i]=true; } else if(s.skinColor && s.skinColor[0]==='#'){ PLAYER_COLORS[i] = parseInt(s.skinColor.replace('#',''),16); updateTokenColor(i); }
       });
       for(let i=netSlots.length;i<4;i++){ players[i].isBot = true; players[i].isLocal = true; updatePlayerCardName(i, '🤖 Máy '+(i+1), '🤖'); }
       netStarted = true;
@@ -1495,7 +1509,7 @@ function netApplyStart(slots, startIdx){
     players[i].isLocal = (i===myNetSlot);
     pidToConn[s.pid] = s.id;
     updatePlayerCardName(i, (s.emoji?s.emoji+' ':'')+s.name, s.emoji);
-    if(s.skinColor==='CHARACTER'){ swapToCharacterPiece(i); } else if(s.skinColor && s.skinColor[0]==='#'){ PLAYER_COLORS[i] = parseInt(s.skinColor.replace('#',''),16); updateTokenColor(i); }
+    if(s.skinColor==='CHARACTER'){ swapToCharacterPiece(i); } else if(s.skinColor==='RAINBOW'){ rainbowPlayers[i]=true; } else if(s.skinColor && s.skinColor[0]==='#'){ PLAYER_COLORS[i] = parseInt(s.skinColor.replace('#',''),16); updateTokenColor(i); }
   });
   for(let i=slots.length;i<4;i++){
     players[i].isBot = true;
@@ -2832,6 +2846,7 @@ function animate(now){
   const dt = Math.min(0.05,(now-lastT)/1000);
   lastT = now;
   stepPhysics(dt);
+  tickRainbow(now);
 
   // Blinking arrow above whoever currently has the turn
   const curTok = tokens[currentPlayer];

@@ -949,6 +949,17 @@ function updateTokenColor(i){
   tok.children[0].material.color.setHex(PLAYER_COLORS[i]);
   tok.children[1].material.color.setHex(PLAYER_COLORS[i]);
 }
+const rainbowPlayers = {};
+let lastRainbowTick = 0;
+function tickRainbow(now){
+  if(now - lastRainbowTick < 80) return;
+  lastRainbowTick = now;
+  Object.keys(rainbowPlayers).forEach(i=>{
+    const hue = (now/1800) % 1;
+    PLAYER_COLORS[i] = new THREE.Color().setHSL(hue, 0.75, 0.5).getHex();
+    updateTokenColor(i);
+  });
+}
 /* --- Quân cờ Nhân Vật Đặc Biệt (999 vàng, bán trong shop, màu cố định không đổi) --- */
 const SKIN_=0xd9a066,HAIR_=0x2a1c12,SHIRT_=0x4d4d4d,PANTS_=0x161616,SHOES_=0x0d0d0d,BASECLR_=0x161616;
 function makeCharacterPiece(){
@@ -2128,6 +2139,7 @@ document.getElementById('start-btn').onclick = ()=>{
     const prof = JSON.parse(localStorage.getItem('ctp_profile_v1'));
     const SKIN_COLORS = {classic:'#c9c9c9',ruby:'#c0293d',sapphire:'#2f6fed',emerald:'#2fa84f',gold:'#e8a622',amethyst:'#8a4fd0',obsidian:'#222'};
     if(prof && prof.equippedSkin==='character'){ swapToCharacterPiece(0); }
+    else if(prof && prof.equippedSkin==='rainbow'){ rainbowPlayers[0] = true; }
     else{ const hex = prof && SKIN_COLORS[prof.equippedSkin]; if(hex){ PLAYER_COLORS[0] = parseInt(hex.replace('#',''),16); updateTokenColor(0); } }
   }catch(e){}
   applyPlayerCountToScene();
@@ -2742,6 +2754,7 @@ function animate(now){
   const dt = Math.min(0.05,(now-lastT)/1000);
   lastT = now;
   stepPhysics(dt);
+  tickRainbow(now);
 
   // Blinking arrow above whoever currently has the turn
   const curTok = tokens[currentPlayer];

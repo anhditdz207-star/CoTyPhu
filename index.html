@@ -1265,7 +1265,7 @@ function openGameWindow(){
   const params = new URLSearchParams({
     net:'1', room, host: isHost?'1':'0',
     pid: profile.pid, name: profile.name, emoji: profile.emoji, color: profile.color,
-    skinColor: profile.equippedSkin==='character' ? 'CHARACTER' : ((SKINS.find(s=>s.id===profile.equippedSkin)||{}).color || '')
+    skinColor: profile.equippedSkin==='character' ? 'CHARACTER' : profile.equippedSkin==='rainbow' ? 'RAINBOW' : ((SKINS.find(s=>s.id===profile.equippedSkin)||{}).color || '')
   });
   // Chuyển sang trang game NGAY TRONG TAB HIỆN TẠI (thay vì mở tab mới),
   // để trang sảnh chờ đóng hẳn -> tắt mic & nhạc nền của sảnh, không bị chồng
