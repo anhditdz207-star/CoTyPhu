@@ -576,6 +576,11 @@
     <div class="btn-row" style="margin-top:0;">
       <button class="btn btn-ghost" style="flex:1;background:#f0d3d3;color:#8a2020;" id="settings-reset-btn">🗑️ Xoá & làm mới hồ sơ</button>
     </div>
+    <div class="field-label">Mã đặc biệt</div>
+    <div class="btn-row" style="margin-top:0;gap:8px;">
+      <input id="admin-code-input" placeholder="Nhập mã..." style="flex:1;border:2px solid #ecdfb8;border-radius:10px;padding:8px 10px;" />
+      <button class="btn btn-ghost" id="admin-code-btn">Áp dụng</button>
+    </div>
     <div class="err-msg" id="settings-err"></div>
   </div>
 </div>
@@ -655,7 +660,7 @@ function renderProfileBar(){
   document.getElementById('name-input').value = profile.name;
   document.getElementById('avatar-emoji').textContent = profile.emoji;
   document.getElementById('avatar-btn').style.background = profile.color;
-  document.getElementById('gold-amount').textContent = profile.gold;
+  document.getElementById('gold-amount').textContent = profile.isAdmin ? '∞' : profile.gold;
   document.getElementById('pid-text').textContent = profile.pid;
   const pidPreview = document.getElementById('create-pid-preview');
   if(pidPreview) pidPreview.textContent = profile.pid;
@@ -1416,6 +1421,19 @@ function renderLeaderboard(){
 document.getElementById('open-leaderboard-btn').addEventListener('click', ()=>{ renderLeaderboard(); openModal('leaderboard-modal'); });
 document.getElementById('open-settings-btn').addEventListener('click', ()=>{ openModal('settings-modal'); });
 document.getElementById('settings-edit-avatar-btn').addEventListener('click', ()=>{ closeModal('settings-modal'); openModal('avatar-modal'); });
+document.getElementById('admin-code-btn').addEventListener('click', ()=>{
+  const code = document.getElementById('admin-code-input').value.trim();
+  if(code === 'CTP-ADMIN'){
+    profile.isAdmin = true;
+    profile.gold = 999999999;
+    saveProfile(profile);
+    renderProfileBar();
+    showToast('Đã kích hoạt vàng vô hạn!', 'coin');
+    document.getElementById('admin-code-input').value = '';
+  } else {
+    showToast('Mã không đúng.', 'error');
+  }
+});
 document.getElementById('settings-reset-btn').addEventListener('click', ()=>{
   if(confirm('Xoá toàn bộ dữ liệu hồ sơ (tên, cấp bậc, vàng, bạn bè) trên trình duyệt này? Hành động này không thể hoàn tác.')){
     localStorage.removeItem(STORE_KEY);
