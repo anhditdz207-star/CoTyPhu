@@ -65,16 +65,17 @@
 
   #card-popup{
     position:absolute; top:50%; left:50%; z-index:70; pointer-events:none;
-    width:min(80vw,440px); height:min(45.9vw,252px); text-align:left;
-    background-size:cover; background-position:center; background-repeat:no-repeat;
-    transform:translate(-50%,-50%); opacity:0; visibility:hidden;
+    width:min(84vw,320px); padding:22px 22px 24px; border-radius:16px; text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,.5);
+    transform:translate(-50%,-50%) scale(0.4) rotate(-8deg); opacity:0;
+    transition:transform .38s cubic-bezier(.34,1.56,.64,1), opacity .3s;
   }
-  #card-popup.show{ opacity:1; visibility:visible; }
-  #card-popup .cp-icon{ display:none; }
-  #card-popup .cp-label{ position:absolute; left:6%; top:9%; font-weight:800; font-size:clamp(14px,3vw,20px); letter-spacing:.5px; text-decoration:underline; color:#111; }
-  #card-popup .cp-text{ position:absolute; left:6%; top:23%; width:56%; font-size:clamp(11px,2.1vw,14px); font-weight:700; line-height:1.5; color:#111; }
-  #card-popup.chance{ background-image:url('assets/co-hoi.png'); }
-  #card-popup.chest{ background-image:url('assets/khi-van.png'); }
+  #card-popup.show{ transform:translate(-50%,-50%) scale(1) rotate(0deg); opacity:1; }
+  #card-popup .cp-icon{ font-size:44px; margin-bottom:6px; }
+  #card-popup .cp-label{ font-weight:800; font-size:15px; letter-spacing:1px; margin-bottom:10px; }
+  #card-popup .cp-text{ font-size:15px; font-weight:600; line-height:1.45; }
+  #card-popup.chance{ background:linear-gradient(180deg,#fff4e0,#ffe3ad); border:4px solid #e8a622; color:#5a3d10; }
+  #card-popup.chest{ background:linear-gradient(180deg,#fff9e0,#ffe98f); border:4px solid #c9a000; color:#5a4a10; }
 
   #endgame-overlay{
     display:none; position:fixed; inset:0; z-index:200; background:rgba(20,15,10,.82);
@@ -167,7 +168,6 @@
     font-weight:800;font-size:15px;color:#7a6a4a;cursor:pointer;
   }
   .count-btn.active{background:#e8a622;border-color:#c9861a;color:#3a2400;}
-
   .slot-row{
     display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;
     padding:8px 10px;margin-bottom:8px;border:2px solid #ecdfb8;
@@ -274,24 +274,17 @@
         <button class="count-btn active" data-n="4">3 máy</button>
       </div>
 
-      <div class="setup-label">Tiền khởi điểm</div>
-      <div class="vol-row">
-        <span class="vol-icon">💰</span>
-        <input type="range" id="cash-slider" min="200" max="1500" step="50" value="200">
-        <span class="vol-label" id="cash-slider-label">$200</span>
-      </div>
-
       <div class="setup-label">Âm thanh</div>
       <div id="setup-sound">
         <div class="vol-row">
           <span class="vol-icon">🎵</span>
-          <input type="range" class="music-slider" min="0" max="100" value="100">
-          <span class="vol-label music-vol-label">100%</span>
+          <input type="range" class="music-slider" min="0" max="100" value="70">
+          <span class="vol-label music-vol-label">55%</span>
         </div>
         <div class="vol-row">
           <span class="vol-icon">🔊</span>
-          <input type="range" class="sfx-slider" min="0" max="100" value="75">
-          <span class="vol-label sfx-vol-label">75%</span>
+          <input type="range" class="sfx-slider" min="0" max="100" value="90">
+          <span class="vol-label sfx-vol-label">90%</span>
         </div>
       </div>
 
@@ -367,13 +360,13 @@
         <div class="menu-divider"></div>
         <div class="vol-row">
           <span class="vol-icon">🎵</span>
-          <input type="range" class="music-slider" min="0" max="100" value="100">
-          <span class="vol-label music-vol-label">100%</span>
+          <input type="range" class="music-slider" min="0" max="100" value="70">
+          <span class="vol-label music-vol-label">55%</span>
         </div>
         <div class="vol-row">
           <span class="vol-icon">🔊</span>
-          <input type="range" class="sfx-slider" min="0" max="100" value="75">
-          <span class="vol-label sfx-vol-label">75%</span>
+          <input type="range" class="sfx-slider" min="0" max="100" value="90">
+          <span class="vol-label sfx-vol-label">90%</span>
         </div>
         <div id="player-volume-panel" style="display:none;">
           <div class="menu-divider"></div>
@@ -949,6 +942,82 @@ function makeToken(color){
   head.position.y=2.55; head.castShadow=true;
   g.add(base,body,head);
   return g;
+}
+function updateTokenColor(i){
+  const tok = tokens[i];
+  if(!tok || tok.userData.isCharacterPiece) return;
+  tok.children[0].material.color.setHex(PLAYER_COLORS[i]);
+  tok.children[1].material.color.setHex(PLAYER_COLORS[i]);
+}
+/* --- Quân cờ Nhân Vật Đặc Biệt (999 vàng, bán trong shop, màu cố định không đổi) --- */
+const SKIN_=0xd9a066,HAIR_=0x2a1c12,SHIRT_=0x4d4d4d,PANTS_=0x161616,SHOES_=0x0d0d0d,BASECLR_=0x161616;
+function makeCharacterPiece(){
+  const g = new THREE.Group();
+  const matSkin=new THREE.MeshStandardMaterial({color:SKIN_,roughness:0.55});
+  const matHair=new THREE.MeshStandardMaterial({color:HAIR_,roughness:0.4});
+  const matShirt=new THREE.MeshStandardMaterial({color:SHIRT_,roughness:0.7});
+  const matPants=new THREE.MeshStandardMaterial({color:PANTS_,roughness:0.75});
+  const matShoes=new THREE.MeshStandardMaterial({color:SHOES_,roughness:0.5,metalness:0.05});
+  const matBase=new THREE.MeshStandardMaterial({color:BASECLR_,roughness:0.6});
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.15,0.35,24),matBase);
+  base.position.y=0.175; base.castShadow=true; base.receiveShadow=true; g.add(base);
+  const shoeGeo=new THREE.BoxGeometry(0.42,0.22,0.62);
+  const shoeL=new THREE.Mesh(shoeGeo,matShoes); shoeL.position.set(-0.28,0.46,0.08);
+  const shoeR=new THREE.Mesh(shoeGeo,matShoes); shoeR.position.set(0.28,0.46,0.08);
+  shoeL.castShadow=shoeR.castShadow=true; g.add(shoeL,shoeR);
+  const legGeo=new THREE.CylinderGeometry(0.26,0.24,0.85,12);
+  const legL=new THREE.Mesh(legGeo,matPants); legL.position.set(-0.28,0.98,0);
+  const legR=new THREE.Mesh(legGeo,matPants); legR.position.set(0.28,0.98,0);
+  legL.castShadow=legR.castShadow=true; g.add(legL,legR);
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.5,1.15,16),matShirt);
+  torso.position.y=2.0; torso.castShadow=true; g.add(torso);
+  const vNeck=new THREE.Mesh(new THREE.ConeGeometry(0.14,0.22,8),matSkin);
+  vNeck.position.set(0,2.52,0.5); vNeck.rotation.x=Math.PI; g.add(vNeck);
+  const shoulderGeo=new THREE.SphereGeometry(0.34,12,12);
+  const shL=new THREE.Mesh(shoulderGeo,matShirt); shL.position.set(-0.58,2.5,0);
+  const shR=new THREE.Mesh(shoulderGeo,matShirt); shR.position.set(0.58,2.5,0);
+  g.add(shL,shR);
+  const upperArmGeo=new THREE.CylinderGeometry(0.24,0.22,0.55,10);
+  const upperArmL=new THREE.Mesh(upperArmGeo,matShirt); upperArmL.position.set(-0.62,2.28,0.15); upperArmL.rotation.z=0.35;
+  const upperArmR=new THREE.Mesh(upperArmGeo,matShirt); upperArmR.position.set(0.62,2.28,0.15); upperArmR.rotation.z=-0.35;
+  g.add(upperArmL,upperArmR);
+  const forearmGeo=new THREE.CylinderGeometry(0.19,0.17,0.62,10);
+  const forearmL=new THREE.Mesh(forearmGeo,matSkin); forearmL.position.set(-0.22,1.98,0.42); forearmL.rotation.z=1.35; forearmL.rotation.x=0.15;
+  const forearmR=new THREE.Mesh(forearmGeo,matSkin); forearmR.position.set(0.22,1.98,0.42); forearmR.rotation.z=-1.35; forearmR.rotation.x=0.15;
+  g.add(forearmL,forearmR);
+  const handGeo=new THREE.SphereGeometry(0.17,10,10);
+  const handL=new THREE.Mesh(handGeo,matSkin); handL.position.set(0.18,1.92,0.5);
+  const handR=new THREE.Mesh(handGeo,matSkin); handR.position.set(-0.18,1.92,0.5);
+  g.add(handL,handR);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.18,10),matSkin);
+  neck.position.y=2.68; g.add(neck);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.42,18,18),matSkin);
+  head.position.y=3.05; head.castShadow=true; g.add(head);
+  const hair=new THREE.Mesh(new THREE.SphereGeometry(0.44,14,14,0,Math.PI*2,0,Math.PI*0.55),matHair);
+  hair.position.y=3.16; g.add(hair);
+  for(let i=0;i<5;i++){
+    const spike=new THREE.Mesh(new THREE.ConeGeometry(0.07,0.22,6),matHair);
+    const a=(i-2)*0.22;
+    spike.position.set(a*0.5,3.42+Math.abs(a)*0.05,-0.1+Math.abs(a)*0.1);
+    spike.rotation.z=-a*1.2; spike.rotation.x=-0.3; g.add(spike);
+  }
+  const beard=new THREE.Mesh(new THREE.SphereGeometry(0.4,14,14,0,Math.PI*2,Math.PI*0.55,Math.PI*0.35),matHair);
+  beard.position.y=2.95; beard.scale.set(1,0.85,0.9); g.add(beard);
+  const mustache=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.05,0.06),matHair);
+  mustache.position.set(0,3.02,0.4); g.add(mustache);
+  g.userData.isCharacterPiece = true;
+  return g;
+}
+function swapToCharacterPiece(i){
+  if(!tokens[i] || tokens[i].userData.isCharacterPiece) return;
+  const oldPos = tokens[i].position.clone();
+  const oldVisible = tokens[i].visible;
+  scene.remove(tokens[i]);
+  const piece = makeCharacterPiece();
+  piece.position.copy(oldPos);
+  piece.visible = oldVisible;
+  scene.add(piece);
+  tokens[i] = piece;
 }
 const OFFSETS = [[-1.5,-1.5],[1.5,-1.5],[-1.5,1.5],[1.5,1.5]];
 const players = PLAYER_NAMES.map((name,i)=>({name, index:i, pos:0, color:PLAYER_COLORS[i], isBot:i>0, isLocal:true, cash:1500, jailCard:0, inJail:false, jailTurns:0}));
@@ -1843,7 +1912,7 @@ const DICE_THROW_B64 = "SUQzAwAAAAAAGFRYWFgAAAAOAAAAVFhYWABtcDQxaXNvbf/7lGQAAAAA
 // 1) Background music = the YouTube video (its own <iframe>, own volume, controlled via postMessage)
 // 2) Sound effects (dice, hops, cards) = Web Audio, synthesized locally, unaffected by the music
 let audioCtx = null, sfxGain = null;
-let musicVolume = 100, sfxVolume = 75;
+let musicVolume = 70, sfxVolume = 90;
 let musicEnabled = true, sfxEnabled = true;
 const ytFrame = document.getElementById('yt-bg');
 
@@ -1932,19 +2001,18 @@ function loadVoiceClips(){
   });
 }
 // Plays a real recorded voice line if we have it; otherwise falls back to TTS with fallbackText.
-function playVoice(key, fallbackText, onEnd){
-  if(!sfxEnabled){ if(onEnd) onEnd(); return; }
+function playVoice(key, fallbackText){
+  if(!sfxEnabled) return;
   if(audioCtx && voiceBuffers[key]){
     window.speechSynthesis && window.speechSynthesis.cancel();
     const src = audioCtx.createBufferSource();
     src.buffer = voiceBuffers[key];
     const g = audioCtx.createGain(); g.gain.value = 1;
     src.connect(g); g.connect(sfxGain);
-    if(onEnd) src.onended = onEnd;
     src.start();
   } else if(fallbackText){
-    speak(fallbackText, onEnd);
-  } else if(onEnd) onEnd();
+    speak(fallbackText);
+  }
 }
 let diceThrowBuffer = null;
 function loadDiceThrowBuffer(){
@@ -2042,11 +2110,6 @@ document.querySelectorAll('.count-btn').forEach(btn=>{
     playerCount = parseInt(btn.dataset.n,10);
   };
 });
-let STARTING_CASH = 200;
-document.getElementById('cash-slider').addEventListener('input', e=>{
-  STARTING_CASH = parseInt(e.target.value,10);
-  document.getElementById('cash-slider-label').textContent = '$'+STARTING_CASH;
-});
 
 function applyPlayerCountToScene(){
   for(let i=0;i<4;i++){
@@ -2061,12 +2124,11 @@ document.getElementById('start-btn').onclick = ()=>{
   ensureAudio();
   setMusicEnabled(musicEnabled);
   setSfxEnabled(sfxEnabled);
-  players.forEach(p=>p.cash=STARTING_CASH);
   try{
     const prof = JSON.parse(localStorage.getItem('ctp_profile_v1'));
     const SKIN_COLORS = {classic:'#c9c9c9',ruby:'#c0293d',sapphire:'#2f6fed',emerald:'#2fa84f',gold:'#e8a622',amethyst:'#8a4fd0',obsidian:'#222'};
-    const hex = prof && SKIN_COLORS[prof.equippedSkin];
-    if(hex) PLAYER_COLORS[0] = parseInt(hex.replace('#',''),16);
+    if(prof && prof.equippedSkin==='character'){ swapToCharacterPiece(0); }
+    else{ const hex = prof && SKIN_COLORS[prof.equippedSkin]; if(hex){ PLAYER_COLORS[0] = parseInt(hex.replace('#',''),16); updateTokenColor(0); } }
   }catch(e){}
   applyPlayerCountToScene();
   document.getElementById('setup-overlay').style.display = 'none';
@@ -2205,43 +2267,28 @@ function pickGentleFemaleVoice(){
   if(knownFemale) return knownFemale;
   return candidates[0] || null; // never fall back to a known-male voice
 }
-function speak(text, onEnd){
-  if(!sfxEnabled || !('speechSynthesis' in window)){ if(onEnd) onEnd(); return; }
+function speak(text){
+  if(!sfxEnabled || !('speechSynthesis' in window)) return;
   try{
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
     const voice = pickGentleFemaleVoice();
     if(voice){ utter.voice = voice; utter.lang = voice.lang; } else { utter.lang = 'vi-VN'; }
     utter.pitch = 1.15; utter.rate = 0.9; utter.volume = 0.9;
-    if(onEnd){ utter.onend = onEnd; utter.onerror = onEnd; }
     window.speechSynthesis.speak(utter);
-  }catch(e){ if(onEnd) onEnd(); }
+  }catch(e){}
 }
 function speakCardText(text){ speak(text); }
-const CARD_IMG_CACHE = {chance:new Image(), chest:new Image()};
-CARD_IMG_CACHE.chance.src = 'assets/co-hoi.png';
-CARD_IMG_CACHE.chest.src = 'assets/khi-van.png';
-let cardDismissible = false;
-function dismissCardPopup(){
-  if(!cardDismissible) return;
-  document.getElementById('card-popup').classList.remove('show');
-  cardDismissible = false;
-  clearTimeout(showCardPopup._h);
-}
-document.addEventListener('click', dismissCardPopup);
-document.addEventListener('touchstart', dismissCardPopup);
 function showCardPopup(deckType, text, voiceKey){
   const popup = document.getElementById('card-popup');
+  document.getElementById('cp-icon').textContent = deckType==='chance' ? '❓' : '🎁';
   document.getElementById('cp-label').textContent = deckType==='chance' ? 'CƠ HỘI' : 'KHÍ VẬN';
   document.getElementById('cp-text').textContent = text;
-  popup.className = deckType;
-  popup.classList.add('show');
-  cardDismissible = false;
+  popup.className = deckType; // resets then re-adds base class for styling
+  popup.classList.add(deckType, 'show');
+  playVoice(voiceKey, text);
   clearTimeout(showCardPopup._h);
-  playVoice(voiceKey, text, ()=>{
-    cardDismissible = true;
-    showCardPopup._h = setTimeout(()=>{ popup.classList.remove('show'); cardDismissible=false; }, 3000);
-  });
+  showCardPopup._h = setTimeout(()=>popup.classList.remove('show'), 2600);
 }
 
 function doRoll(){
@@ -2513,7 +2560,7 @@ function goToTile(playerIdx, targetIdx, opts, callback){
 function applyCard(playerIdx, deckType, card){
   const p = players[playerIdx];
   playSfx('card');
-  showCardPopup(deckType, (p.isBot?'🤖 '+p.name+': ':'')+card.text, card.voice, p.pos);
+  showCardPopup(deckType, (p.isBot?'🤖 '+p.name+': ':'')+card.text, card.voice);
   setTimeout(()=>{
     if(card.type==='gain'){
       p.cash += card.value; updateHUD(); endTurn();
