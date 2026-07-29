@@ -972,13 +972,10 @@ function updateTokenColor(i){
   tok.children[0].material.color.setHex(PLAYER_COLORS[i]);
   tok.children[1].material.color.setHex(PLAYER_COLORS[i]);
 }
-// Skin "Cầu vồng": không phải 1 màu cố định nên không thể gán thẳng vào PLAYER_COLORS
-// như các skin khác — thay vào đó liên tục xoay vòng màu (dùng CHUNG PLAYER_COLORS[i]
-// nên nhà xây lúc nào cũng lấy đúng màu quân cờ đang hiện tại, luôn đồng bộ với nhau).
 const rainbowPlayers = {};
 let lastRainbowTick = 0;
 function tickRainbow(now){
-  if(now - lastRainbowTick < 80) return; // ~12 lần/giây là đủ mượt, đỡ tốn máy
+  if(now - lastRainbowTick < 80) return;
   lastRainbowTick = now;
   Object.keys(rainbowPlayers).forEach(i=>{
     const hue = (now/1800) % 1;
