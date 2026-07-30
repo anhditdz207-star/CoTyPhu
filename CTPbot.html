@@ -274,6 +274,12 @@
         <button class="count-btn active" data-n="4">3 máy</button>
       </div>
 
+      <div class="setup-label">💰 Tiền thưởng qua Ô Bắt Đầu</div>
+      <div class="vol-row">
+        <input type="range" id="passgo-slider" min="100" max="500" step="50" value="200">
+        <span class="vol-label" id="passgo-label">$200</span>
+      </div>
+
       <div class="setup-label">Âm thanh</div>
       <div id="setup-sound">
         <div class="vol-row">
@@ -2151,6 +2157,11 @@ document.getElementById('start-btn').onclick = ()=>{
 
 /* ============================= GAME / TURN LOGIC ============================= */
 let currentPlayer = 0;
+let PASS_GO_BONUS = 200;
+document.getElementById('passgo-slider').addEventListener('input', e=>{
+  PASS_GO_BONUS = +e.target.value;
+  document.getElementById('passgo-label').textContent = '$'+PASS_GO_BONUS;
+});
 let animating = false;
 let rolling = false;
 let doublesStreak = 0;
@@ -2560,9 +2571,9 @@ function goToTile(playerIdx, targetIdx, opts, callback){
   playSfx('hop');
   animateHop(tok, from, to, 320, ()=>{
     if(passedGo){
-      p.cash += 200;
+      p.cash += PASS_GO_BONUS;
       playSfx('go');
-      showToast(p.name+' đi qua Ô Bắt Đầu, nhận $200!');
+      showToast(p.name+' đi qua Ô Bắt Đầu, nhận $'+PASS_GO_BONUS+'!');
       playVoice('A2','Ngân hàng trả bạn 200 đô!');
     }
     callback();
@@ -2721,9 +2732,9 @@ function moveToken(playerIdx, steps){
     players[playerIdx].pos = newIdx;
     playSfx('hop');
     if(newIdx===0){
-      players[playerIdx].cash += 200;
+      players[playerIdx].cash += PASS_GO_BONUS;
       playSfx('go');
-      showToast(players[playerIdx].name+' đi qua Ô Xuất Phát, nhận $200!');
+      showToast(players[playerIdx].name+' đi qua Ô Xuất Phát, nhận $'+PASS_GO_BONUS+'!');
       playVoice('A2','Ngân hàng trả bạn 200 đô!');
     }
     const from = tok.position.clone();
