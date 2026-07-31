@@ -274,10 +274,10 @@
         <button class="count-btn active" data-n="4">3 máy</button>
       </div>
 
-      <div class="setup-label">💰 Tiền thưởng qua Ô Bắt Đầu</div>
+      <div class="setup-label">💰 Tiền khởi điểm</div>
       <div class="vol-row">
-        <input type="range" id="passgo-slider" min="100" max="500" step="50" value="200">
-        <span class="vol-label" id="passgo-label">$200</span>
+        <input type="range" id="startcash-slider" min="200" max="1500" step="100" value="1500">
+        <span class="vol-label" id="startcash-label">$1500</span>
       </div>
 
       <div class="setup-label">Âm thanh</div>
@@ -2148,6 +2148,7 @@ document.getElementById('start-btn').onclick = ()=>{
     else if(prof && prof.equippedSkin==='rainbow'){ rainbowPlayers[0] = true; }
     else{ const hex = prof && SKIN_COLORS[prof.equippedSkin]; if(hex){ PLAYER_COLORS[0] = parseInt(hex.replace('#',''),16); updateTokenColor(0); } }
   }catch(e){}
+  players.forEach((p,i)=>{ p.cash = START_CASH; lastKnownCash[i] = START_CASH; });
   applyPlayerCountToScene();
   document.getElementById('setup-overlay').style.display = 'none';
   currentPlayer = 0;
@@ -2157,10 +2158,10 @@ document.getElementById('start-btn').onclick = ()=>{
 
 /* ============================= GAME / TURN LOGIC ============================= */
 let currentPlayer = 0;
-let PASS_GO_BONUS = 200;
-document.getElementById('passgo-slider').addEventListener('input', e=>{
-  PASS_GO_BONUS = +e.target.value;
-  document.getElementById('passgo-label').textContent = '$'+PASS_GO_BONUS;
+let START_CASH = 1500;
+document.getElementById('startcash-slider').addEventListener('input', e=>{
+  START_CASH = +e.target.value;
+  document.getElementById('startcash-label').textContent = '$'+START_CASH;
 });
 let animating = false;
 let rolling = false;
@@ -2571,9 +2572,9 @@ function goToTile(playerIdx, targetIdx, opts, callback){
   playSfx('hop');
   animateHop(tok, from, to, 320, ()=>{
     if(passedGo){
-      p.cash += PASS_GO_BONUS;
+      p.cash += 200;
       playSfx('go');
-      showToast(p.name+' đi qua Ô Bắt Đầu, nhận $'+PASS_GO_BONUS+'!');
+      showToast(p.name+' đi qua Ô Bắt Đầu, nhận $200!');
       playVoice('A2','Ngân hàng trả bạn 200 đô!');
     }
     callback();
@@ -2732,9 +2733,9 @@ function moveToken(playerIdx, steps){
     players[playerIdx].pos = newIdx;
     playSfx('hop');
     if(newIdx===0){
-      players[playerIdx].cash += PASS_GO_BONUS;
+      players[playerIdx].cash += 200;
       playSfx('go');
-      showToast(players[playerIdx].name+' đi qua Ô Xuất Phát, nhận $'+PASS_GO_BONUS+'!');
+      showToast(players[playerIdx].name+' đi qua Ô Xuất Phát, nhận $200!');
       playVoice('A2','Ngân hàng trả bạn 200 đô!');
     }
     const from = tok.position.clone();

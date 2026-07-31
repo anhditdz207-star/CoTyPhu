@@ -1070,7 +1070,7 @@ const NET_MY_PID = netParams.get('pid') || ('guest-'+Math.random().toString(36).
 const NET_MY_NAME = netParams.get('name') || 'Người chơi';
 const NET_MY_EMOJI = netParams.get('emoji') || '🙂';
 const NET_MY_SKINCOLOR = netParams.get('skinColor') || '';
-let PASS_GO_BONUS = parseInt(netParams.get('passGo')) || 200;
+const NET_START_CASH = parseInt(netParams.get('startCash')) || 1500;
 let netPeer=null, netMyId=null, netConns={}, netRoster={}, netSlots=[], myNetSlot=-1, netStarted=false;
 let localStream=null, micOn=true, mediaCalls={}, audioEls={};
 // --- Định danh bền vững (pid) tách biệt khỏi id kết nối tạm thời (netMyId) ---
@@ -1514,7 +1514,7 @@ function netApplyStart(slots, startIdx){
     players[i].isLocal = NET_IS_HOST;
     updatePlayerCardName(i, '🤖 Máy '+(i+1), '🤖');
   }
-  players.forEach(p=>{ p.inJail=false; p.jailTurns=0; });
+  players.forEach((p,i)=>{ p.inJail=false; p.jailTurns=0; p.cash=NET_START_CASH; lastKnownCash[i]=NET_START_CASH; });
   netStarted = true;
   document.getElementById('setup-overlay').style.display = 'none';
   document.getElementById('game-chat-btn').style.display = 'flex';
@@ -2650,9 +2650,9 @@ function goToTile(playerIdx, targetIdx, opts, callback){
   playSfx('hop');
   animateHop(tok, from, to, 320, ()=>{
     if(passedGo){
-      p.cash += PASS_GO_BONUS;
+      p.cash += 200;
       playSfx('go');
-      showToast(p.name+' đi qua Ô Bắt Đầu, nhận $'+PASS_GO_BONUS+'!');
+      showToast(p.name+' đi qua Ô Bắt Đầu, nhận $200!');
       playVoice('A2','Ngân hàng trả bạn 200 đô!');
     }
     callback();
@@ -2811,9 +2811,9 @@ function moveToken(playerIdx, steps){
     players[playerIdx].pos = newIdx;
     playSfx('hop');
     if(newIdx===0){
-      players[playerIdx].cash += PASS_GO_BONUS;
+      players[playerIdx].cash += 200;
       playSfx('go');
-      showToast(players[playerIdx].name+' đi qua Ô Xuất Phát, nhận $'+PASS_GO_BONUS+'!');
+      showToast(players[playerIdx].name+' đi qua Ô Xuất Phát, nhận $200!');
       playVoice('A2','Ngân hàng trả bạn 200 đô!');
     }
     const from = tok.position.clone();

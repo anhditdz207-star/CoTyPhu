@@ -471,10 +471,10 @@
     <div id="pane-create">
       <div class="field-label">Phòng của bạn sẽ dùng ID người chơi làm mã phòng</div>
       <div class="room-code-box" style="margin-bottom:6px;"><span>ID của bạn: <b id="create-pid-preview">CTP-000000</b></span></div>
-      <div class="field-label">💰 Tiền thưởng qua Ô Bắt Đầu</div>
+      <div class="field-label">💰 Tiền khởi điểm</div>
       <div class="btn-row" style="margin-top:0;align-items:center;">
-        <input type="range" id="passgo-slider" min="100" max="500" step="50" value="200" style="flex:1;">
-        <span id="passgo-label" style="min-width:50px;font-weight:800;">$200</span>
+        <input type="range" id="startcash-slider" min="200" max="1500" step="100" value="1500" style="flex:1;">
+        <span id="startcash-label" style="min-width:50px;font-weight:800;">$1500</span>
       </div>
       <div class="btn-row"><button class="btn btn-gold" style="flex:1" id="create-room-btn">🏠 Tạo phòng mới</button></div>
     </div>
@@ -1099,7 +1099,7 @@ function handleData(fromId, data){
   } else if(data.t==='gamestart'){
     if(!isHost){
       gameSessionId = data.sessionId;
-      passGoBonus = data.passGo || 200;
+      startCash = data.startCash || 1500;
       netStartedLobby = true;
       document.getElementById('matchmaking-overlay').classList.remove('show');
       document.getElementById('join-game-banner').classList.add('show');
@@ -1183,10 +1183,10 @@ function startPeerAndJoin(customId, targetId, hostFlag, publicFlag, codeForRoom)
   });
 }
 
-let passGoBonus = 200;
-document.getElementById('passgo-slider').addEventListener('input', e=>{
-  passGoBonus = +e.target.value;
-  document.getElementById('passgo-label').textContent = '$'+passGoBonus;
+let startCash = 1500;
+document.getElementById('startcash-slider').addEventListener('input', e=>{
+  startCash = +e.target.value;
+  document.getElementById('startcash-label').textContent = '$'+startCash;
 });
 function createFriendRoom(){
   // Mỗi lần tạo phòng -> 1 mã phòng MỚI HOÀN TOÀN (không dùng lại ID cố định của hồ sơ nữa),
@@ -1277,7 +1277,7 @@ function openGameWindow(){
     net:'1', room, host: isHost?'1':'0',
     pid: profile.pid, name: profile.name, emoji: profile.emoji, color: profile.color,
     skinColor: profile.equippedSkin==='character' ? 'CHARACTER' : profile.equippedSkin==='rainbow' ? 'RAINBOW' : ((SKINS.find(s=>s.id===profile.equippedSkin)||{}).color || ''),
-    passGo: passGoBonus
+    startCash: startCash
   });
   // Chuyển sang trang game NGAY TRONG TAB HIỆN TẠI (thay vì mở tab mới),
   // để trang sảnh chờ đóng hẳn -> tắt mic & nhạc nền của sảnh, không bị chồng
@@ -1288,7 +1288,7 @@ document.getElementById('start-game-btn').addEventListener('click', ()=>{
   if(isHost){
     const base = isPublicRoom ? PUBLIC_ROOM_ID : roomCode;
     gameSessionId = base+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-    broadcastAll({t:'gamestart', sessionId:gameSessionId, passGo:passGoBonus});
+    broadcastAll({t:'gamestart', sessionId:gameSessionId, startCash:startCash});
     // Đợi một nhịp ngắn để tin nhắn 'gamestart' kịp gửi đi qua kết nối
     // trước khi trang sảnh bị đóng (điều hướng sang trang game).
     setTimeout(openGameWindow, 150);
