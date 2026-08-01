@@ -2330,14 +2330,17 @@ function doRoll(){
 }
 rollBtn.addEventListener('click', doRoll);
 
+function jailBailCost(p){ return [100,75,50][Math.min(p.jailTurns||0,2)]; }
 function updateJailButtons(){
   const p = players[currentPlayer];
   const payBtn = document.getElementById('jail-pay-btn');
   const cardBtn = document.getElementById('jail-card-btn');
   const isMyRealTurn = !(p.isBot && (!NET_ENABLED || p.isLocal)) && (!NET_ENABLED || p.isLocal);
   if(p.inJail && isMyRealTurn && !animating && !rolling){
+    const cost = jailBailCost(p);
     payBtn.style.display = 'inline-flex';
-    payBtn.disabled = p.cash < 50;
+    payBtn.textContent = '💵 Nộp $'+cost+' ra tù';
+    payBtn.disabled = p.cash < cost;
     cardBtn.style.display = (p.jailCard>0) ? 'inline-flex' : 'none';
     rollBtn.textContent = '🎲 Đổ tìm số đôi ('+(p.jailTurns||0)+'/3)';
   } else {
@@ -2347,9 +2350,10 @@ function updateJailButtons(){
 }
 function payJailBail(){
   const p = players[currentPlayer];
-  if(!p.inJail || p.cash<50) return;
-  p.cash -= 50; p.inJail = false; p.jailTurns = 0;
-  showToast(p.name+' đã nộp $50 để ra tù.');
+  const cost = jailBailCost(p);
+  if(!p.inJail || p.cash<cost) return;
+  p.cash -= cost; p.inJail = false; p.jailTurns = 0;
+  showToast(p.name+' đã nộp $'+cost+' để ra tù.');
   updateHUD();
   updateJailButtons();
 }
@@ -2374,7 +2378,15 @@ function maybeBotTurn(){
   updateJailButtons();
   // (turn announcement voice removed per request — just a short pause before the next action)
   if(isBot){
-    setTimeout(()=>{ if(!animating) doRoll(); }, 2200);
+    setTimeout(()=>{
+      if(animating) return;
+      if(p.inJail){
+        const cost = jailBailCost(p);
+        if(p.jailCard>0){ useJailCard(); maybeBotTurn(); return; }
+        if(p.jailTurns>=1 && p.cash - cost > Math.max(100, START_CASH*0.25)){ payJailBail(); maybeBotTurn(); return; }
+      }
+      doRoll();
+    }, 2200);
   }
 }
 
@@ -2657,7 +2669,11 @@ function afterLanding(playerIdx){
     if(owner===null){
       if(p.isBot){
         if(!NET_ENABLED || p.isLocal){
-          if(p.cash - tile.price > 250){
+          const groupOwned = tile.g ? [...Array(40).keys()].filter(i=>TILES[i].t==='prop'&&TILES[i].g===tile.g&&ownership[i]===playerIdx).length : 0;
+          const railOwned = tile.t==='rail' ? [...Array(40).keys()].filter(i=>TILES[i].t==='rail'&&ownership[i]===playerIdx).length : 0;
+          const eager = groupOwned>0 || railOwned>0;
+          const reserve = eager ? Math.max(30, START_CASH*0.08) : Math.max(50, START_CASH*0.15);
+          if(p.cash - tile.price > reserve){
             buyProperty(playerIdx, p.pos);
             showToast(p.name+' đã mua '+tile.n+' với giá $'+tile.price);
             if(NET_ENABLED) netEmit({t:'action', kind:'buyYes', playerIdx, tileIdx:p.pos});
